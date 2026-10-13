@@ -1,0 +1,29 @@
+# NLP Workshop (Days 1-3): every package used by the 14 practical notebooks.
+# Install:  uv pip install -r requirements.txt
+# Tested with Python 3.13 and the versions in the comments; Python 3.10-3.13 should work.
+
+# Core data and plotting (all notebooks)
+numpy>=1.26            # tested 2.5.3
+pandas>=2.1            # tested 3.0.5
+matplotlib>=3.8        # tested 3.11.2
+
+# Classic NLP (A1-A5, B1-B6, C1)
+nltk>=3.9              # tested 3.10.3
+scikit-learn>=1.4      # tested 1.9.1  - TF-IDF, Naive Bayes, Logistic Regression, metrics
+spacy>=3.7,<3.9        # tested 3.8.16 - B4 NER, B5 dependency parsing, A1
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+
+# Transformers (B7, C1)
+# torch>=2.2             # tested 2.14.1 - on a machine with an NVIDIA GPU, install the CUDA build if uv picks the CPU one
+# transformers>=4.46     # tested 5.19.0
+# accelerate>=0.34       # tested 1.15.0 - needed by the Trainer in B7
+# datasets>=2.20         # tested 5.1.0  - CNN/Daily Mail in C1
+# sentencepiece>=0.2     # tested 0.2.2  - T5 tokenizer in C1
+# rouge-score>=0.1.2     # tested 0.1.2  - ROUGE in C1, C2
+
+# LLM API (C2)
+# google-genai>=1.0      # tested 2.29.0 - Gemini API client
+
+# Running the notebooks locally 
+jupyterlab>=4.0
+ipykernel>=6.29
