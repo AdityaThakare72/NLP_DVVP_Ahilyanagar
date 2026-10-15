@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 3 Session 1: Paying Attention - Word Vectors, Self-Attention and the Transformer</title>
+<style>:root{
+  --bg:#fbfaf6; --panel:#ffffff; --ink:#14213d; --ink2:#46506b; --line:#d9d6cc;
+  --navy:#0b2545; --teal:#0f766e; --teal-bg:#e4f3f0; --orange:#c2570c; --orange-bg:#fdeede;
+  --blue:#1d4ed8; --blue-bg:#e6edfd; --red:#b42318; --red-bg:#fde8e6; --green:#15803d; --green-bg:#e3f5e8;
+  --code-bg:#0f1b33; --code-ink:#e8edf7; --code-dim:#8ea0c4; --hl:#fde68a;
+  --serif:Georgia,"Times New Roman",serif; --sans:"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:"JetBrains Mono","Fira Code",Consolas,"Courier New",monospace;
+}
+body.dark{
+  --bg:#0c1426; --panel:#13203a; --ink:#e8edf7; --ink2:#a9b6d3; --line:#2a3a5c;
+  --teal-bg:#0d3b3a; --orange-bg:#3d2410; --blue-bg:#16264d; --red-bg:#43201d; --green-bg:#12341f;
+  --hl:#7a5c00;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0a0f1c;overflow:hidden;font-family:var(--sans);color:var(--ink)}
+#viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{position:relative;width:1920px;height:1080px;transform-origin:center center;background:var(--bg);overflow:hidden;flex:none}
+.slide{position:absolute;inset:0;display:none;padding:118px 96px 92px 96px;flex-direction:column}
+.slide.active{display:flex}
+.slide h1{font-family:var(--serif);font-size:68px;line-height:1.1;margin:0 0 20px;color:var(--navy)}
+body.dark .slide h1,body.dark .slide h2{color:#f3f6fd}
+.slide h2{font-family:var(--serif);font-size:50px;line-height:1.12;margin:0 0 22px;color:var(--navy)}
+.slide h3{font-size:30px;margin:0 0 10px;color:var(--teal);letter-spacing:.2px}
+.slide p{font-size:33px;line-height:1.42;margin:0 0 16px}
+.slide li{font-size:32px;line-height:1.42;margin-bottom:8px}
+.slide ul,.slide ol{margin:0 0 14px;padding-left:44px}
+.lead{font-size:40px!important;line-height:1.4!important}
+.small{font-size:26px!important;color:var(--ink2)}
+.tiny{font-size:22px!important;color:var(--ink2)}
+.muted{color:var(--ink2)}
+.center{text-align:center}
+.step{opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s;pointer-events:none}
+.step.on{opacity:1;transform:none;pointer-events:auto}
+tr.step{transform:none}
+.cols{display:grid;gap:34px;flex:1;min-height:0}
+.c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:1fr 1fr 1fr}.c21{grid-template-columns:2fr 1fr}.c12{grid-template-columns:1fr 2fr}.c32{grid-template-columns:3fr 2fr}.c23{grid-template-columns:2fr 3fr}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:26px 30px;min-height:0}
+.card h3{margin-top:0}
+.analogy{background:var(--teal-bg);border:2px solid var(--teal);border-radius:18px;padding:22px 30px}
+.analogy:before{content:"ANALOGY";display:block;font-size:20px;font-weight:800;letter-spacing:2px;color:var(--teal);margin-bottom:6px}
+.breaks{background:var(--orange-bg);border:2px solid var(--orange);border-radius:18px;padding:22px 30px}
+.breaks:before{content:"WHERE IT BREAKS";display:block;font-size:20px;font-weight:800;letter-spacing:2px;color:var(--orange);margin-bottom:6px}
+.example{background:var(--blue-bg);border:2px solid var(--blue);border-radius:18px;padding:22px 30px}
+.example:before{content:"WORKED EXAMPLE";display:block;font-size:20px;font-weight:800;letter-spacing:2px;color:var(--blue);margin-bottom:6px}
+.why{background:var(--green-bg);border:2px solid var(--green);border-radius:18px;padding:22px 30px}
+.why:before{content:"WHY THIS MATTERS";display:block;font-size:20px;font-weight:800;letter-spacing:2px;color:var(--green);margin-bottom:6px}
+.ask{background:var(--panel);border:3px dashed var(--navy);border-radius:18px;padding:22px 30px}
+.ask:before{content:"ASK THE ROOM";display:block;font-size:20px;font-weight:800;letter-spacing:2px;color:var(--navy);margin-bottom:6px}
+body.dark .ask{border-color:#8ea0c4}
+.link{background:var(--panel);border-left:10px solid var(--teal);padding:16px 26px;border-radius:8px;font-size:28px;color:var(--ink2)}
+.link b{color:var(--teal)}
+.answer{margin-top:10px;font-weight:600;color:var(--green)}
+code,.mono{font-family:var(--mono);font-size:.86em;background:rgba(15,27,51,.09);padding:1px 8px;border-radius:6px}
+body.dark code{background:rgba(255,255,255,.12)}
+pre.code{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:28px;line-height:1.5;padding:22px 28px;border-radius:16px;margin:0 0 16px;overflow:hidden;white-space:pre}
+pre.code .c{color:var(--code-dim)} pre.code .k{color:#7dd3fc} pre.code .s{color:#fcd34d} pre.code .n{color:#fda4af}
+pre.out{background:#101a2c;color:#c9f7d1;font-family:var(--mono);font-size:26px;line-height:1.45;padding:18px 26px;border-radius:14px;margin:0 0 16px;white-space:pre;overflow:hidden;border-left:8px solid #34d399}
+.tbl{border-collapse:collapse;font-size:30px;margin:0 0 16px}
+.tbl th,.tbl td{border:2px solid var(--line);padding:8px 18px;text-align:center}
+.tbl th{background:var(--navy);color:#fff;font-weight:700}
+body.dark .tbl th{background:#1d2f55}
+.tbl td.l{text-align:left}
+.tbl tr.hl td{background:var(--hl)}
+.tbl td.hl,.tbl th.hl{background:var(--hl)!important;color:#14213d}
+.tbl.sm{font-size:25px}.tbl.sm th,.tbl.sm td{padding:5px 12px}
+.pill{display:inline-block;padding:3px 16px;border-radius:999px;background:var(--navy);color:#fff;font-size:26px;margin:0 6px 6px 0;font-family:var(--mono)}
+.pill.t{background:var(--teal)}.pill.o{background:var(--orange)}.pill.b{background:var(--blue)}.pill.r{background:var(--red)}.pill.g{background:var(--green)}.pill.x{background:var(--line);color:var(--ink)}
+.flow{display:flex;align-items:stretch;gap:0}
+.flow .box{background:var(--panel);border:3px solid var(--navy);border-radius:14px;padding:14px 20px;font-size:28px;text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center}
+.flow .box small{display:block;font-size:22px;color:var(--ink2);margin-top:4px;font-weight:400}
+.flow .arr{display:flex;align-items:center;font-size:44px;color:var(--teal);padding:0 8px}
+.flow .box.act{background:var(--navy);color:#fff}.flow .box.act small{color:#cbd5ea}
+.bigq{font-family:var(--serif);font-size:56px;line-height:1.25;color:var(--navy)}
+body.dark .bigq{color:#f3f6fd}
+.hlw{background:var(--hl);border-radius:6px;padding:0 6px}
+.tok{display:inline-block;border:2px solid var(--navy);border-radius:10px;padding:2px 12px;margin:4px 6px 4px 0;font-family:var(--mono);font-size:30px;background:var(--panel)}
+.tok.x{border-color:var(--red);color:var(--red);text-decoration:line-through;background:var(--red-bg)}
+.tok.n{border-color:var(--green);background:var(--green-bg)}
+.tok.e{border-color:var(--orange);background:var(--orange-bg)}
+/* chrome */
+#topbar{position:absolute;left:0;right:0;top:0;height:78px;display:flex;align-items:center;padding:0 36px;gap:16px;background:var(--navy);color:#fff;z-index:20;font-size:23px}
+#topbar .sess{font-weight:700;letter-spacing:.5px;white-space:nowrap;color:#fbbf24;font-size:22px}
+#tracker{display:flex;gap:6px;flex:1;justify-content:center}
+#tracker .st{padding:6px 14px;border-radius:999px;border:2px solid rgba(255,255,255,.3);font-size:21px;color:#cdd7ee;white-space:nowrap}
+#tracker .st.on{background:#fbbf24;border-color:#fbbf24;color:#14213d;font-weight:700}
+#tracker .st.done{border-color:#5eead4;color:#5eead4}
+#topbar .sec{font-size:21px;color:#cdd7ee;white-space:nowrap;max-width:360px;overflow:hidden;text-overflow:ellipsis}
+#bottombar{position:absolute;left:0;right:0;bottom:0;height:56px;display:flex;align-items:center;padding:0 36px;gap:20px;z-index:20;color:var(--ink2);font-size:22px}
+#bottombar .bar{flex:1;height:8px;background:var(--line);border-radius:8px;overflow:hidden}
+#bottombar .bar i{display:block;height:100%;background:var(--teal);width:0}
+#bottombar button{font-size:22px;background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:2px 14px;cursor:pointer;color:var(--ink)}
+#notes{position:absolute;left:60px;right:60px;bottom:70px;max-height:62%;overflow:auto;background:rgba(10,15,28,.96);color:#eef2fb;border-radius:18px;padding:26px 34px;font-size:27px;line-height:1.5;z-index:40;display:none;border:2px solid #fbbf24}
+#notes.show{display:block}
+#notes h4{margin:0 0 8px;color:#fbbf24;font-size:22px;letter-spacing:2px}
+#notes p{font-size:27px;margin:0 0 12px}
+#overview{position:absolute;inset:0;background:rgba(10,15,28,.97);z-index:50;display:none;overflow:auto;padding:40px 70px;color:#eef2fb}
+#overview.show{display:block}
+#overview h4{color:#fbbf24;letter-spacing:2px;margin:24px 0 8px;font-size:22px}
+#overview a{display:inline-block;margin:5px 8px 5px 0;padding:6px 14px;border:2px solid #3a4a70;border-radius:10px;color:#eef2fb;text-decoration:none;font-size:23px;cursor:pointer}
+#overview a.cur{border-color:#fbbf24;color:#fbbf24}
+/* sims */
+.sim{background:var(--panel);border:3px solid var(--navy);border-radius:20px;padding:22px 28px;position:relative}
+.sim:before{content:"TRY IT";position:absolute;top:-17px;left:24px;background:var(--navy);color:#fff;font-size:20px;font-weight:800;letter-spacing:2px;padding:3px 14px;border-radius:8px}
+.sim label{font-size:26px;color:var(--ink2);margin-right:10px}
+.sim input[type=text],.sim textarea,.sim select{font-family:var(--mono);font-size:28px;padding:8px 14px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);max-width:100%}
+.sim textarea{width:100%;resize:none}
+.sim button,.btn{font-size:26px;background:var(--navy);color:#fff;border:none;border-radius:12px;padding:8px 22px;cursor:pointer;margin:4px 6px 4px 0;font-family:var(--sans)}
+.sim button.alt,.btn.alt{background:var(--panel);color:var(--navy);border:2px solid var(--navy)}
+.sim button:disabled{opacity:.4;cursor:default}
+.sim .row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+.sim .out{font-family:var(--mono);font-size:27px;line-height:1.5;white-space:pre-wrap}
+.sim input[type=range]{width:420px;height:30px}
+.sim .stat{display:inline-block;margin-right:28px;font-size:26px}
+.sim .stat b{font-size:36px;color:var(--teal)}
+.sim .chk{font-size:27px;margin-right:22px;white-space:nowrap}
+.sim .chk input{width:26px;height:26px;vertical-align:middle;margin-right:6px}
+.sim svg text{font-family:var(--sans)}
+.good{color:var(--green);font-weight:700}.bad{color:var(--red);font-weight:700}
+.slide aside.notes{display:none!important}
+.tabs button{font-size:26px;background:var(--navy);color:#fff;border:none;border-radius:12px;padding:8px 22px;cursor:pointer;margin:4px 6px 8px 0;font-family:var(--sans)}
+.tabs button.alt{background:var(--panel);color:var(--navy);border:2px solid var(--navy)}
+.tabs .row{display:flex;flex-wrap:wrap}
+.slide.tight p,.slide.tight li{font-size:27px;margin-bottom:10px}
+.sim .row span,.sim .row b{font-size:26px}
+.slide p + .sim{margin-top:22px}
+</style></head>
+<body>
+<div id="viewport"><div id="stage">
+<div id="topbar"><div class="sess"></div><div id="tracker"></div><div class="sec"></div></div>
+<section class="slide" data-sec="Start" data-stage="1" style="justify-content:center">
+<h1 style="font-size:78px">Paying Attention: Word Vectors, Self-Attention and the Transformer</h1>
+<p class="lead" style="color:var(--teal)">Day 2 treated every word as a separate symbol and looked one or two words back. Today a word becomes a vector, and every word can look at every other word in the sentence.</p>
+<p class="small" style="margin-top:40px">Day 3 &middot; Session 1 of 5 &middot; modern neural NLP</p>
+<aside class="notes"><p>Day 3 is about the models behind today's NLP: BERT, BART, T5 and large language models. They all rest on two ideas we build in this session: dense word vectors and attention. We build attention by hand on numbers small enough to check on paper, then assemble the transformer block by block. No library hides anything in this session.</p></aside></section>
+
+<section class="slide" data-sec="Start" data-stage="1">
+<h2>By the end of this session you can...</h2>
+<ol>
+<li class="step">Explain why <b>dense word vectors</b> beat one-hot and count vectors, and where they still fail</li>
+<li class="step">Compute <b>scaled dot-product attention</b> by hand: scores, scaling, softmax, weighted sum</li>
+<li class="step">Explain <b>self-attention</b>, <b>multi-head</b> attention and <b>positional encodings</b>, and what each one fixes</li>
+<li class="step">Draw a <b>transformer block</b> and say why it replaced recurrent networks</li>
+<li class="step">Describe the <b>encoder-decoder</b> design and the history of machine translation: rule-based, statistical, neural</li></ol>
+<aside class="notes"><p>Objective 2 is the core. If students can do one attention step by hand, BERT and GPT stop being magic: they are this step, repeated, with learned numbers.</p></aside></section>
+
+<section class="slide" data-sec="Start" data-stage="1,2,3,4,5">
+<h2>The plan for Day 3: from vectors to language models</h2>
+<table class="tbl" style="width:100%;font-size:25px">
+<tr><th style="width:7%">#</th><th style="width:26%">Session</th><th style="width:36%">Question</th><th>Practical</th></tr>
+<tr class="step"><td>1</td><td class="l"><b>Attend</b>: word vectors, attention, transformer</td><td class="l">How can a model use the whole sentence at once?</td><td class="l">theory for B7, C1, C2</td></tr>
+<tr class="step"><td>2</td><td class="l"><b>Tokenize</b>: subwords, BERT</td><td class="l">How do these models read text, and what does BERT learn before we touch it?</td><td class="l">B7 parts (a), (b)</td></tr>
+<tr class="step"><td>3</td><td class="l"><b>Fine-tune</b>: BERT for classification</td><td class="l">How do we adapt a pretrained model to our labels?</td><td class="l">B7 parts (c), (d)</td></tr>
+<tr class="step"><td>4</td><td class="l"><b>Summarise</b>: BART, T5, ROUGE</td><td class="l">How do we shorten a document, and how do we score a summary?</td><td class="l">C1</td></tr>
+<tr class="step"><td>5</td><td class="l"><b>Generate</b>: LLMs, prompts, chatbots, RAG</td><td class="l">How do we build a reliable chatbot on an LLM API?</td><td class="l">C2</td></tr></table>
+<aside class="notes"><p>Same design as Days 1 and 2: each session ends with a problem the next one solves, and the tracker at the top shows where we are. Group C needs only one of C1 or C2; we teach both.</p></aside></section>
+
+<section class="slide" data-sec="Start" data-stage="1">
+<h2>Where we are: three limits left over from Day 2</h2>
+<div class="cols c3">
+<div class="breaks step"><h3>Words are unrelated symbols</h3><p>To TF-IDF, "great" and "excellent" are as different as "great" and "banana". What the model learns about one word teaches it nothing about the other.</p></div>
+<div class="breaks step"><h3>Context is short</h3><p>An n-gram sees 1 or 2 words back. In "the movie that my friends said was boring turned out great", the word deciding the label is far from "movie".</p></div>
+<div class="breaks step"><h3>One model per task</h3><p>Every task needed its own labelled data and its own model, trained from zero. Nothing was reused.</p></div></div>
+<div class="bigq step" style="margin-top:20px">Today fixes the first two. Sessions 2 and 3 fix the third.</div>
+<aside class="notes"><p>Ask the room for an example of each limit from Day 2 practicals: B6's "not bad" bigram problem is a context problem; B6's cross-domain result (IMDB model on tweets near chance) is a one-model-per-task problem.</p></aside></section>
+
+<section class="slide" data-sec="Word vectors" data-stage="1">
+<h2>From one-hot to dense vectors</h2>
+<div class="cols c2">
+<div class="card step"><h3>One-hot (Day 1)</h3><p>A vector as long as the vocabulary, all zeros except one 1.</p><p style="font-family:var(--mono);font-size:26px">great&nbsp;&nbsp;&nbsp;&nbsp;= [0 0 1 0 0 ... 0]<br>excellent = [0 0 0 0 1 ... 0]</p><p>Dot product of any two different words: <b>0</b>. No notion of similar.</p></div>
+<div class="card step"><h3>Dense vector (embedding)</h3><p>A short list of real numbers, typically 100 to 1024, learned from text.</p><p style="font-family:var(--mono);font-size:24px" id="g12">great = [...]</p><p>Similar words get similar vectors, so what is learned for one word helps its neighbours.</p></div></div>
+<div class="analogy step" style="margin-top:16px"><p style="margin:0">A one-hot vector is a roll number: unique, but tells you nothing about the student. An embedding is a profile: marks in 100 subjects. Two students with similar profiles are similar, even if you never compared them directly.</p></div>
+<aside class="notes"><p>The numbers on the right are the first 12 of the 100 numbers our word2vec model learned for "great" (next slide). No single number has a meaning on its own; the meaning is in how vectors relate to each other.</p></aside></section>
+
+<section class="slide" data-sec="Word vectors" data-stage="1">
+<h2>Where the numbers come from: you shall know a word by its company</h2>
+<p class="lead">word2vec (Mikolov et al., 2013) learns vectors by a simple task: <b>predict a word from its neighbours</b>. Words that appear in similar contexts end up with similar vectors.</p>
+<div class="example step"><p style="margin:0">"The acting was <b>___</b> and the plot was weak." Words that fit the blank: bad, poor, wooden, terrible. The model is pushed to give them similar vectors because they predict the same neighbours.</p></div>
+<pre class="code step" style="font-size:24px;margin-top:16px"><span class="k">from</span> gensim.models <span class="k">import</span> Word2Vec
+model = Word2Vec(sentences,           <span class="c"># list of token lists: all 50,000 IMDB reviews</span>
+                 vector_size=<span class="n">100</span>,     <span class="c"># 100 numbers per word</span>
+                 window=<span class="n">5</span>,           <span class="c"># neighbours = 5 words on each side</span>
+                 min_count=<span class="n">5</span>)        <span class="c"># ignore words seen fewer than 5 times</span>
+model.wv.most_similar(<span class="s">"great"</span>)</pre>
+<p class="small step">We trained it on the 50,000 IMDB reviews: <span id="w2vstat"></span>. Real results on the next slide.</p>
+<aside class="notes"><p>This is the CBOW variant (continuous bag of words): average the neighbours' vectors and predict the middle word; the skip-gram variant predicts the neighbours from the middle word. Training is a small neural network with one hidden layer; the hidden layer weights are the vectors. The famous quote is from the linguist J. R. Firth (1957).</p></aside></section>
+
+<section class="slide" data-sec="Word vectors" data-stage="1" data-init="vecExplorer">
+<h2>Explore real word vectors trained on IMDB</h2>
+<div class="sim" style="flex:1"></div>
+<aside class="notes"><p>Click through great, terrible, boring, actor. Then show the pairs: movie/film 0.94 (almost synonyms in reviews), and good/bad 0.77, higher than great/excellent. That is the main weakness: antonyms appear in the same contexts ("the acting was good/bad"), so context-based vectors put them close. For sentiment that is a real problem, and one reason fine-tuning (Session 3) matters. Also funny and scary are each other's nearest neighbour: both describe genre films in the same position of a sentence.</p></aside></section>
+
+<section class="slide" data-sec="Word vectors" data-stage="1">
+<h2>Arithmetic on meaning, and where it breaks</h2>
+<div class="cols c2">
+<div class="why step"><h3>Directions carry meaning</h3><p>actor &minus; man + woman &rarr; <b id="an1"></b></p><p>king &minus; man + woman &rarr; <b id="an2"></b></p><p class="small">Real results from our IMDB vectors. The difference "woman minus man" is roughly a direction in the space.</p></div>
+<div class="breaks step"><h3>One vector per word</h3><p>"The plot was <b>light</b>" and "the <b>light</b> was too dark in every scene" get the <b>same</b> vector for light. A static vector mixes all senses of a word.</p><p class="small">good &minus; better + bad &rarr; <span id="an3"></span>: not "worse". Analogies work for some relations only.</p></div></div>
+<div class="link step" style="margin-top:16px"><b>What we need next:</b> a vector for a word <b>in this sentence</b>, built from the words around it. That is exactly what attention computes.</div>
+<aside class="notes"><p>The king/queen analogy works only weakly on movie reviews (queen at 0.59, barely above jane and carmen) because royalty is rare in reviews; on Wikipedia-trained vectors it is much clearer. The polysemy problem (one vector for all senses) is what contextual embeddings such as BERT solve: the vector for light depends on the sentence.</p></aside></section>
+
+<section class="slide" data-sec="Attention" data-stage="1">
+<h2>Attention in one sentence</h2>
+<p class="lead">To build the vector for a word, <b>look at every word in the sentence</b>, decide how relevant each one is, and take a <b>weighted average</b> of their information.</p>
+<div class="example step"><p style="margin:0">"The <b>movie</b> my friends said was boring turned out <b>great</b>." To understand <b>great</b>, the most useful word is <b>movie</b> (what is great?), not "friends" or "boring". Attention can give "movie" a high weight even though it is 7 words away.</p></div>
+<div class="analogy step" style="margin-top:16px"><p style="margin:0">A student in a group project with a question (the <b>query</b>). Every teammate has a badge saying what they know (the <b>key</b>) and their actual notes (the <b>value</b>). The student compares the question with every badge, then reads mostly the notes of the best matches.</p></div>
+<aside class="notes"><p>Query, key and value are the three roles every word plays. A word asks a question (query), advertises what it can answer (key), and offers its content (value). All three are made from the word's own vector by multiplying with three learned matrices.</p></aside></section>
+
+<section class="slide" data-sec="Attention" data-stage="1">
+<h2>Scaled dot-product attention, step by step</h2>
+<div class="flow step" style="margin-bottom:18px">
+<div class="box">1. Scores<small>q &middot; k for every word</small></div><div class="arr">&rarr;</div>
+<div class="box">2. Scale<small>divide by &radic;d</small></div><div class="arr">&rarr;</div>
+<div class="box">3. Softmax<small>scores become weights that add to 1</small></div><div class="arr">&rarr;</div>
+<div class="box act">4. Weighted sum<small>&Sigma; weight &times; v</small></div></div>
+<p class="step" style="font-family:var(--serif);font-size:44px;text-align:center;margin:16px 0">Attention(Q, K, V) = softmax( Q K<sup>T</sup> / &radic;d<sub>k</sub> ) V</p>
+<div class="cols c3" style="grid-template-columns:1fr 1fr 1fr">
+<div class="card step"><h3>Dot product</h3><p>Large when two vectors point the same way: query and key match.</p></div>
+<div class="card step"><h3>&radic;d scaling</h3><p>With d = 64 numbers per vector, dot products get large; softmax would put almost all weight on one word. Dividing keeps it smooth.</p></div>
+<div class="card step"><h3>Softmax</h3><p>e<sup>score</sup> / sum of e<sup>score</sup>. Every weight is positive and they add to 1.</p></div></div>
+<aside class="notes"><p>The formula is from "Attention Is All You Need" (Vaswani et al., 2017). Q, K and V are matrices with one row per word, so one matrix product computes all the scores of all words at once. That is why attention is fast on GPUs.</p></aside></section>
+
+<section class="slide" data-sec="Attention" data-stage="1" data-init="attnCalc">
+<h2>Compute attention yourself</h2>
+<p class="small" style="margin-bottom:4px">Made-up numbers, small enough to check on paper (d = 4). Pick the word that asks the question.</p>
+<div class="sim" style="flex:1"></div>
+<aside class="notes"><p>Pick "good": its query matches the key of "not" and of "movie" best, so its new vector is mostly made of their values. That is how the model can learn that "not" changes "good". Then switch off the scaling and push the sharpness slider: softmax becomes winner-takes-all, which makes training unstable. In a real model the numbers are learned, not chosen; we chose them to make the pattern visible.</p></aside></section>
+
+<section class="slide" data-sec="Attention" data-stage="1">
+<h2>Self-attention: every word does this at once</h2>
+<div class="cols c2">
+<div class="card step"><h3>Self</h3><p>Queries, keys and values all come from the <b>same</b> sentence. Each of the n words attends to all n words, including itself.</p><p>Result: n new vectors, each a mix of the whole sentence. The vector for "good" now knows about "not".</p></div>
+<div class="card step"><h3>Where Q, K, V come from</h3><p>Three learned weight matrices:</p><p style="font-family:var(--mono);font-size:26px">Q = X W<sub>Q</sub><br>K = X W<sub>K</sub><br>V = X W<sub>V</sub></p><p class="small">X: one row per word (its embedding). Training sets W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub>.</p></div></div>
+<div class="breaks step" style="margin-top:16px"><p style="margin:0"><b>Cost:</b> n words means n &times; n scores. A 512-token text gives 262,144 scores per head per layer. This is why models have a maximum input length (BERT: 512 tokens).</p></div>
+<aside class="notes"><p>The n-squared cost is the main practical limit of transformers and the reason long documents are truncated or split (Session 3 for IMDB reviews, Session 4 for news articles). Many research models reduce it, but the standard models we use have the limit.</p></aside></section>
+
+<section class="slide" data-sec="Attention" data-stage="1">
+<h2>Multi-head attention: several questions at once</h2>
+<p class="lead">One attention step answers one kind of question. A word needs several: what is my subject, what modifies me, what does "it" refer to?</p>
+<div class="flow step" style="margin:10px 0 18px">
+<div class="box">word vectors X<small>n &times; 768</small></div><div class="arr">&rarr;</div>
+<div class="box">12 heads<small>each with its own W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub>, size 64</small></div><div class="arr">&rarr;</div>
+<div class="box">concatenate<small>12 &times; 64 = 768</small></div><div class="arr">&rarr;</div>
+<div class="box act"><span style="white-space:nowrap">output W<sub>O</sub></span><small>mixes the heads, n &times; 768</small></div></div>
+<div class="cols c2">
+<div class="why step"><p style="margin:0">Each head can learn a different pattern. Studies of trained BERT (Clark et al., 2019) found heads that follow syntax: one attends from objects to their verbs, another from determiners to their nouns, the dependency arcs of Day 2.</p></div>
+<div class="card step"><p style="margin:0">Numbers from BERT-base: 768-number vectors, 12 heads of 64. The total work is about the same as one big head; the heads just split it.</p></div></div>
+<aside class="notes"><p>"What does BERT look at?" by Clark, Khandelwal, Levy and Manning (2019) is a readable paper for students who want evidence that heads learn linguistic structure. Not every head is interpretable; many attend to punctuation or the separator token.</p></aside></section>
+
+<section class="slide" data-sec="Attention" data-stage="1" data-init="posEnc">
+<h2>Word order: positional encodings</h2>
+<p class="small" style="margin-bottom:6px">Attention is a weighted <b>sum</b>, and a sum ignores order: "dog bites man" and "man bites dog" would give the same result. So a position vector is added to each word vector before the first layer.</p>
+<div class="sim" style="flex:1"></div>
+<aside class="notes"><p>The original transformer used fixed sine and cosine waves of different wavelengths (shown here): low dimensions change fast with position, high dimensions slowly, like the hands of a clock. Nearby positions get similar vectors. BERT instead learns one vector per position (0 to 511) during pretraining; the idea is the same.</p></aside></section>
+
+<section class="slide" data-sec="Transformer" data-stage="1">
+<h2>One transformer block</h2>
+<div class="flow step" style="margin-bottom:16px">
+<div class="box">input vectors<small>word + position</small></div><div class="arr">&rarr;</div>
+<div class="box act">multi-head self-attention<small>mix information across words</small></div><div class="arr">&rarr;</div>
+<div class="box">add &amp; normalise<small>keep the input, rescale</small></div><div class="arr">&rarr;</div>
+<div class="box act">feed-forward<small>two linear layers per word</small></div><div class="arr">&rarr;</div>
+<div class="box">add &amp; normalise<small>output vectors</small></div></div>
+<div class="cols c3" style="grid-template-columns:1fr 1fr 1fr">
+<div class="card step"><h3>Attention</h3><p>Words exchange information. The only place where words see each other.</p></div>
+<div class="card step"><h3>Feed-forward</h3><p>Each word's vector is processed on its own (768 &rarr; 3072 &rarr; 768 in BERT). Most of the parameters live here.</p></div>
+<div class="card step"><h3>Add &amp; norm</h3><p>"Residual connection": add the input back to the output, so a block can only adjust the vector, not destroy it. Makes deep stacks trainable.</p></div></div>
+<div class="link step" style="margin-top:16px">Stack the block: BERT-base uses <b>12</b> blocks, the original translation transformer 6 in the encoder and 6 in the decoder. The output has the same shape as the input, so blocks stack like bricks.</div>
+<aside class="notes"><p>Input and output of a block are both n vectors of size 768, which is what makes stacking possible. After 12 blocks each word's vector has been mixed with the whole sentence 12 times: these are contextual embeddings.</p></aside></section>
+
+<section class="slide" data-sec="Transformer" data-stage="1">
+<h2>Why transformers replaced recurrent networks</h2>
+<table class="tbl" style="width:100%;font-size:26px">
+<tr><th style="width:24%"></th><th style="width:38%">Recurrent network (RNN, LSTM)</th><th>Transformer</th></tr>
+<tr class="step"><td class="l"><b>How it reads</b></td><td class="l">one word at a time, carrying a memory vector forward</td><td class="l">all words at once</td></tr>
+<tr class="step"><td class="l"><b>Long-range links</b></td><td class="l">information from word 1 must pass through every step to reach word 50; it fades</td><td class="l">word 50 attends to word 1 directly, one step</td></tr>
+<tr class="step"><td class="l"><b>Training speed</b></td><td class="l">steps depend on each other: hard to parallelise</td><td class="l">one big matrix product: fast on GPUs</td></tr>
+<tr class="step"><td class="l"><b>Weakness</b></td><td class="l">slow, forgets</td><td class="l">cost grows with n &times; n, needs a length limit; needs lots of data</td></tr></table>
+<div class="why step" style="margin-top:14px"><p style="margin:0">Parallel training is what made it possible to train on billions of words, and training on billions of words is what made pretrained models possible (Session 2).</p></div>
+<aside class="notes"><p>LSTMs (1997) improved on plain RNNs with gates that decide what to keep, and with attention added (2015) they were the best translation models until 2017. The transformer paper's title, "Attention Is All You Need", is the claim that the recurrence can be dropped entirely.</p></aside></section>
+
+<section class="slide" data-sec="Encoder-decoder" data-stage="1">
+<h2>Encoder-decoder: from one sequence to another</h2>
+<div class="flow step" style="margin-bottom:16px">
+<div class="box">source sentence<small>"I am going to school"</small></div><div class="arr">&rarr;</div>
+<div class="box act">encoder<small>self-attention over the source</small></div><div class="arr">&rarr;</div>
+<div class="box act">decoder<small>writes one token at a time</small></div><div class="arr">&rarr;</div>
+<div class="box">target sentence<small>"मी शाळेत जात आहे"</small></div></div>
+<div class="cols c2">
+<div class="card step"><h3>Decoder, two kinds of attention</h3><p><b>Masked self-attention</b> over the words written so far (it may not peek at future words), and <b>cross-attention</b> to the encoder's vectors: "which source words matter for the next target word?"</p></div>
+<div class="card step"><h3>Same design, many tasks</h3><p>Translation (English &rarr; Marathi), <b>summarisation</b> (article &rarr; summary, Session 4), question answering, paraphrasing. BART and T5 are encoder-decoders.</p></div></div>
+<div class="link step" style="margin-top:16px"><b>Three families:</b> encoder only (BERT: understand text, Sessions 2-3), encoder-decoder (BART, T5: text to text, Session 4), decoder only (GPT, Gemini: continue text, Session 5).</div>
+<aside class="notes"><p>The decoder generates the way Day 2's n-gram model generated text: predict a distribution over the next token, pick one, append, repeat. The difference is what the prediction is conditioned on: the whole source sentence through cross-attention plus everything generated so far, instead of two previous words.</p></aside></section>
+
+<section class="slide" data-sec="Encoder-decoder" data-stage="1">
+<h2>Machine translation: three generations</h2>
+<table class="tbl" style="width:100%;font-size:25px">
+<tr><th style="width:18%">approach</th><th style="width:34%">how it works</th><th style="width:24%">strength</th><th>weakness</th></tr>
+<tr class="step"><td class="l"><b>Rule-based (RBMT)</b><br><span class="small">1950s-1990s</span></td><td class="l">bilingual dictionaries + hand-written grammar rules for reordering and agreement</td><td class="l">predictable, works without data</td><td class="l">rules never cover real language; every language pair needs linguists</td></tr>
+<tr class="step"><td class="l"><b>Statistical (SMT)</b><br><span class="small">1990s-2016</span></td><td class="l">learn word and phrase translation probabilities from parallel text, plus an n-gram language model for fluency</td><td class="l">learns from data; Day 2's n-grams at work</td><td class="l">phrase by phrase: long-distance reordering and agreement go wrong</td></tr>
+<tr class="step"><td class="l"><b>Neural (NMT)</b><br><span class="small">2014-today</span></td><td class="l">one encoder-decoder network trained end to end; transformer since 2017</td><td class="l">fluent, uses the whole sentence</td><td class="l">needs much parallel data; can produce fluent but wrong output</td></tr></table>
+<div class="example step" style="margin-top:14px"><p style="margin:0">English is subject-verb-object, Marathi and Hindi are subject-object-verb: "I am going <b>to school</b>" &rarr; "मी <b>शाळेत</b> जात आहे". Reordering is exactly where rule systems and phrase tables struggled and attention helps.</p></div>
+<aside class="notes"><p>Google Translate used phrase-based SMT from 2006 and switched to neural translation in 2016. Translation quality is scored with BLEU, which counts matching n-grams between the system output and human reference translations; we meet it with ROUGE in Session 4. The original transformer reached 28.4 BLEU on WMT 2014 English-German, beating all earlier systems.</p></aside></section>
+
+<section class="slide" data-sec="Wrap-up" data-stage="1">
+<h2>Common mistakes in this session</h2>
+<div class="cols c2">
+<div class="breaks step"><p style="margin:0"><b>"Similar vectors means same meaning."</b> good and bad are close (0.77) in our vectors. Similar context, not similar meaning.</p></div>
+<div class="breaks step"><p style="margin:0"><b>Forgetting the softmax.</b> Raw dot products are not weights; they can be negative and do not add to 1.</p></div>
+<div class="breaks step"><p style="margin:0"><b>Thinking attention knows word order.</b> Without positional encodings it does not.</p></div>
+<div class="breaks step"><p style="margin:0"><b>"Attention weights explain the model."</b> They show where information flowed in one layer, not why the final answer was chosen.</p></div>
+<div class="breaks step"><p style="margin:0"><b>Mixing up the families.</b> BERT does not generate text; GPT-style models are not bidirectional.</p></div>
+<div class="breaks step"><p style="margin:0"><b>Ignoring the length limit.</b> Text beyond 512 tokens is cut off silently by BERT tokenizers.</p></div></div>
+<aside class="notes"><p>The attention-as-explanation point is a known debate in research ("Attention is not Explanation", Jain and Wallace, 2019). It is safe to say attention shows information flow, not reasons.</p></aside></section>
+
+<section class="slide" data-sec="Wrap-up" data-stage="1">
+<h2>Recap, and what Session 2 starts with</h2>
+<ul>
+<li class="step"><b>Dense vectors</b> put words with similar contexts close together; they still mix senses and confuse antonyms.</li>
+<li class="step"><b>Attention</b>: scores q&middot;k, scale by &radic;d, softmax, weighted sum of values. Every word can use every other word.</li>
+<li class="step"><b>Transformer block</b>: multi-head self-attention + feed-forward, each with add &amp; norm; positions added at the start; blocks stack.</li>
+<li class="step"><b>Encoder-decoder</b> maps one sequence to another; NMT replaced rule-based and statistical translation.</li></ul>
+<div class="link step" style="margin-top:18px"><b>Still unsolved:</b> where do the input vectors come from, and what about words never seen in training (Day 1's OOV problem)? And who trains all those weight matrices? Session 2: <b>subword tokens</b>, and <b>pretraining</b> BERT on billions of words.</div>
+<aside class="notes"><p>The handoff: a transformer is an empty architecture until it is trained. Session 2 is about the input side (tokens) and the training side (pretraining).</p></aside></section>
+
+<section class="slide" data-sec="Wrap-up" data-stage="1">
+<h2>Practice</h2>
+<div class="cols c2">
+<div class="card"><h3>1. Softmax by hand</h3><p>Scores 2, 1, 0. What are the weights?</p><p class="small answer step">e&sup2;=7.39, e&sup1;=2.72, e&#8304;=1; sum 11.11. Weights 0.67, 0.24, 0.09.</p></div>
+<div class="card"><h3>2. Scaling</h3><p>d = 64. A raw score is 24. What is the scaled score?</p><p class="small answer step">&radic;64 = 8, so 24 / 8 = 3.</p></div></div>
+<div class="cols c2" style="margin-top:14px">
+<div class="card"><h3>3. Count the scores</h3><p>A 128-token input, 12 heads, 12 layers. How many attention scores?</p><p class="small answer step">128 &times; 128 &times; 12 &times; 12 = 2,359,296.</p></div>
+<div class="card"><h3>4. Think</h3><p>Why are "good" and "bad" close in word2vec space?</p><p class="small answer step">They occur in the same contexts ("the acting was ___"), and word2vec learns only from context.</p></div></div>
+<aside class="notes"><p>Exercise 3 shows why long inputs are expensive: double the length and the score count goes up four times.</p></aside></section>
+
+<div id="bottombar"><button id="b-prev">&#8592;</button><button id="b-next">&#8594;</button><div class="bar"><i></i></div><span id="counter"></span><button id="b-notes">Notes (N)</button><button id="b-over">Overview (O)</button></div>
+<div id="notes"></div><div id="overview"></div>
+</div></div>
+<script>window.DECK={"title": "Day 3 Session 1: Paying Attention - Word Vectors, Self-Attention and the Transformer", "file": "D3S1_Attention_Transformer", "session": "DAY 3 / SESSION 1", "stages": ["Attend", "Tokenize", "Fine-tune", "Summarise", "Generate"], "data": ["d3s1"]};</script>
+<script>window.SIMS = window.SIMS || {};
+window.U = {
+  q:(s,r)=> (r||document).querySelector(s),
+  qa:(s,r)=> Array.from((r||document).querySelectorAll(s)),
+  esc:s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'),
+  tok:(t,c)=>'<span class="tok '+(c||'')+'">'+U.esc(t)+'</span>',
+  toks:(a,c)=>a.map(t=>U.tok(t,c)).join(''),
+};
+// generic tabs: <div class="tabs"><button data-t="a">A</button> ... <div class="pane" data-p="a">..</div></div>
+SIMS.tabs = function(sl){
+  U.qa('.tabs',sl).forEach(box=>{
+    const btns=U.qa('button[data-t]',box), panes=U.qa('.pane',box);
+    function pick(t){btns.forEach(b=>b.classList.toggle('alt',b.dataset.t!==t));panes.forEach(p=>p.style.display=p.dataset.p===t?'block':'none');}
+    btns.forEach(b=>b.onclick=()=>pick(b.dataset.t)); pick(btns[0].dataset.t);
+  });
+};
+// what the computer sees
+SIMS.computerView = function(sl){
+  const inp=U.q('input',sl), out=U.q('.out',sl);
+  function go(){
+    const s=inp.value; let h='<table class="tbl sm"><tr><th>character</th>'+[...s].map(c=>'<td>'+(c===' '?'&#9251;':U.esc(c))+'</td>').join('')+'</tr>';
+    h+='<tr><th>number (Unicode)</th>'+[...s].map(c=>'<td>'+c.codePointAt(0)+'</td>').join('')+'</tr>';
+    const bytes=[...new TextEncoder().encode(s)];
+    h+='</table><div class="small">Stored as '+bytes.length+' bytes: '+bytes.slice(0,24).join(' ')+(bytes.length>24?' ...':'')+'</div>';
+    out.innerHTML=h;
+  }
+  inp.oninput=go; go();
+};
+// pipeline explorer
+SIMS.pipeExplorer = function(sl){
+  const data=window.PIPE_DATA; let si=0, st=0;
+  const stages=[
+   ['Raw text','What we receive. Nothing has been done to it.',d=>'<div class="out">'+U.esc(d.raw)+'</div>'],
+   ['Clean','Lowercase, strip punctuation and extra spaces. Same words, tidier surface.',d=>'<div class="out">'+U.esc(d.clean)+'</div>'],
+   ['Tokenize','Cut the string into pieces (tokens). Notice how wasn\'t is cut, a list now replaces a string.',d=>U.toks(d.tokens)],
+   ['Drop stop words','Remove very common words. Careful: this can also remove meaning.',d=>U.toks(d.tokens.map(t=>d.nostop.includes(t)?t:null).filter(Boolean),'n')+'<div class="small" style="margin-top:10px">Removed: '+U.toks(d.tokens.filter(t=>!d.nostop.includes(t)),'x')+'</div>'],
+   ['Stem','Chop endings with fixed rules. Fast, crude, sometimes not a real word (movi, dri).',d=>d.nostop.map((t,i)=>U.tok(t)+'<span style="font-size:30px"> &rarr; </span>'+U.tok(d.stems[i],'e')).join('<br>')],
+   ['Lemmatize','Use grammar and a dictionary to get the real base word (was becomes be, running becomes run).',d=>d.lemmas.map(t=>U.tok(t,'n')).join('')],
+   ['Tag (POS)','Label each word with its grammatical role, using the sentence around it.',d=>d.attrs.filter(a=>a[2]!=='PUNCT').map(a=>'<span style="display:inline-block;margin:4px 10px 4px 0;text-align:center">'+U.tok(a[0])+'<br><span class="pill t" style="font-size:22px;margin-top:4px">'+a[2]+'</span></span>').join('')],
+   ['Find entities','Spot names of people, places, dates, organisations.',d=>d.ents.length?d.ents.map(e=>U.tok(e[0],'e')+'<span class="pill o" style="font-size:22px">'+e[1]+'</span>').join('<br>'):'<span class="muted">No named entities found in this sentence.</span>'],
+  ];
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row" id="pe-s"></div><div class="row" id="pe-t"></div><div class="card" style="min-height:260px"><h3 id="pe-h"></h3><div class="small" id="pe-d" style="margin-bottom:14px"></div><div id="pe-o" style="font-size:30px"></div></div><div class="row"><button id="pe-prev" class="alt">&larr; previous stage</button><button id="pe-next">next stage &rarr;</button></div>';
+  const sb=U.q('#pe-s',root), tb=U.q('#pe-t',root);
+  data.forEach((d,i)=>{const b=document.createElement('button');b.textContent='Sentence '+(i+1);b.onclick=()=>{si=i;draw()};sb.appendChild(b)});
+  stages.forEach((s,i)=>{const b=document.createElement('button');b.textContent=(i+1)+'. '+s[0];b.style.fontSize='22px';b.onclick=()=>{st=i;draw()};tb.appendChild(b)});
+  function draw(){
+    U.qa('button',sb).forEach((b,i)=>b.classList.toggle('alt',i!==si));
+    U.qa('button',tb).forEach((b,i)=>b.classList.toggle('alt',i!==st));
+    U.q('#pe-h',root).textContent='Stage '+(st+1)+': '+stages[st][0];
+    U.q('#pe-d',root).textContent=stages[st][1];
+    U.q('#pe-o',root).innerHTML=stages[st][2](data[si]);
+    U.q('#pe-prev',root).disabled=st===0; U.q('#pe-next',root).disabled=st===stages.length-1;
+  }
+  U.q('#pe-prev',root).onclick=()=>{if(st>0){st--;draw()}};
+  U.q('#pe-next',root).onclick=()=>{if(st<stages.length-1){st++;draw()}};
+  draw();
+};
+
+// click a token, see everything spaCy knows about it
+SIMS.spacyTokens = function(sl){
+  const data=window.PIPE_DATA; let si=0, ti=0;
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row" id="sp-s"></div><div id="sp-t" style="margin:6px 0 14px"></div><table class="tbl" id="sp-a" style="font-size:26px;width:100%"></table><div class="small" id="sp-x" style="margin-top:10px"></div>';
+  const sb=U.q('#sp-s',root);
+  data.forEach((d,i)=>{const b=document.createElement('button');b.textContent='Sentence '+(i+1);b.onclick=()=>{si=i;ti=0;draw()};sb.appendChild(b)});
+  const expl={text:'the exact characters',lemma:'base form of the word',pos:'coarse part of speech (universal tags)',tag:'fine-grained tag (Penn Treebank style)',dep:'grammatical relation to its head word',head:'the word this one attaches to',ent:'entity label, or - if none'};
+  function draw(){
+    U.qa('button',sb).forEach((b,i)=>b.classList.toggle('alt',i!==si));
+    const at=data[si].attrs;
+    const t=U.q('#sp-t',root); t.innerHTML='';
+    at.forEach((a,i)=>{const s=document.createElement('span');s.className='tok'+(i===ti?' e':'');s.style.cursor='pointer';s.textContent=a[0];s.onclick=()=>{ti=i;draw()};t.appendChild(s)});
+    const a=at[ti], k=['text','lemma','pos','tag','dep','head','ent'];
+    U.q('#sp-a',root).innerHTML='<tr><th>attribute</th><th>value</th><th>meaning</th></tr>'+k.map((n,j)=>'<tr><td class="l"><code>token.'+(n==='ent'?'ent_type_':n==='pos'?'pos_':n==='tag'?'tag_':n==='dep'?'dep_':n==='lemma'?'lemma_':n==='head'?'head.text':'text')+'</code></td><td><b>'+U.esc(a[j])+'</b></td><td class="l">'+expl[n]+'</td></tr>').join('');
+    U.q('#sp-x',root).textContent='Click any word above. Token '+(ti+1)+' of '+at.length+'.';
+  }
+  draw();
+};
+// remove stop words, watch the meaning flip
+SIMS.stopBreak = function(sl){
+  const sents=[['the movie was not good at all','neg'],['this is not a bad film','pos'],['i would not recommend it to anyone','neg'],['the acting was great and the story was fun','pos']];
+  const stops=new Set(("i me my myself we our ours you your he him his she her it its they them what which who this that these those am is are was were be been being have has had do does did a an the and but if or as of at by for with about against between into through during before after to from up down in out on off over under again then once here there when where why how all any both each few more most other some such no nor not only own same so than too very s t can will just don should now").split(' '));
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row"><span>Sentence:</span><select id="sb-s"></select></div><div class="row"><label class="chk"><input type="checkbox" id="sb-sw"> remove NLTK English stop words</label><label class="chk"><input type="checkbox" id="sb-keep"> but keep negations (no, nor, not)</label></div><div class="card"><div class="small">What the model would see:</div><div id="sb-o" style="font-size:34px;margin:8px 0"></div><div id="sb-v" class="small"></div></div>';
+  const sel=U.q('#sb-s',root); sents.forEach((s,i)=>{const o=document.createElement('option');o.value=i;o.textContent=s[0];sel.appendChild(o)});
+  function draw(){
+    const [s,truth]=sents[+sel.value]; const rm=U.q('#sb-sw',root).checked, keep=U.q('#sb-keep',root).checked;
+    const w=s.split(' '); const kept=w.filter(x=>!rm||!stops.has(x)||(keep&&['no','nor','not'].includes(x)));
+    U.q('#sb-o',root).innerHTML=U.toks(kept,'n')+(rm?'<br>'+U.toks(w.filter(x=>!kept.includes(x)),'x'):'');
+    const neg=kept.includes('not')||kept.includes('no');
+    let msg='True sentiment: <b>'+(truth==='pos'?'positive':'negative')+'</b>.';
+    if(rm&&!neg&&w.includes('not')) msg+=' <span class="bad" style="color:#c0392b"><b>The word "not" is gone. The remaining words look like the opposite sentiment.</b></span>';
+    else if(rm&&keep&&w.includes('not')) msg+=' <span class="good"><b>"not" survived, so the model still has a chance.</b></span>';
+    U.q('#sb-v',root).innerHTML=msg;
+  }
+  sel.onchange=draw; U.qa('input',root).forEach(i=>i.onchange=draw); draw();
+};
+
+// ---------- helpers ----------
+U.hbars=function(items,opt){opt=opt||{};const mx=opt.max||Math.max.apply(null,items.map(i=>i[1]));
+  return items.map(i=>'<div style="display:flex;align-items:center;gap:10px;margin:3px 0"><div style="width:'+(opt.lw||190)+'px;text-align:right;font-size:'+(opt.fs||24)+'px">'+U.esc(i[0])+'</div><div style="flex:1;background:#e8edf5;border-radius:6px;height:'+(opt.h||26)+'px"><div style="width:'+Math.max(0.5,i[1]/mx*100)+'%;height:100%;border-radius:6px;background:'+(i[2]||'var(--teal)')+'"></div></div><div style="width:'+(opt.vw||110)+'px;font-size:'+(opt.fs||24)+'px">'+i[1].toLocaleString()+'</div></div>').join('');};
+U.fmt=n=>n.toLocaleString('en-US');
+
+// ---------- cleaning builder ----------
+SIMS.cleanBuilder=function(sl){
+  const texts=["OMG!!! This movie was <b>AMAZING</b> :) Loved it, 10/10, visit https://imdb.com/title/tt123 for more   info.","  The U.S. release is on 12/05/2024 &amp; costs $9.99...  Don't miss it!!  ","@sam I can't believe it's already Day 2 #nlp #workshop \u2013 so much to learn!"];
+  const ops=[
+   {id:'html',label:'strip HTML tags and entities',re:'<[^>]+>  and  &[a-z]+;',f:t=>t.replace(/<[^>]+>/g,' ').replace(/&[a-z]+;/g,' ')},
+   {id:'url',label:'remove URLs',re:'https?://\\S+',f:t=>t.replace(/https?:\/\/\S+/g,' ')},
+   {id:'low',label:'lowercase',re:'text.lower()',f:t=>t.toLowerCase()},
+   {id:'dig',label:'remove digits',re:'[0-9]+',f:t=>t.replace(/[0-9]+/g,' ')},
+   {id:'punc',label:'remove punctuation (keep apostrophes)',re:"[^a-zA-Z0-9\\s']",f:t=>t.replace(/[^a-zA-Z0-9\s']/g,' ')},
+   {id:'ws',label:'collapse extra spaces',re:'\\s+  ->  single space, then strip()',f:t=>t.replace(/\s+/g,' ').trim()}];
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row"><span>Text:</span><select id="cb-s"></select></div><textarea id="cb-t" rows="2" style="width:100%;font-size:26px"></textarea><div class="row" id="cb-o" style="margin-top:6px"></div><div class="card"><div class="small">After the steps you ticked (applied top to bottom):</div><div class="out" id="cb-r" style="font-size:28px;white-space:pre-wrap"></div><div class="small" id="cb-n"></div><div class="small" id="cb-re" style="margin-top:6px"></div></div>';
+  const sel=U.q('#cb-s',root), ta=U.q('#cb-t',root), ob=U.q('#cb-o',root);
+  texts.forEach((t,i)=>{const o=document.createElement('option');o.value=i;o.textContent='Example '+(i+1);sel.appendChild(o)});
+  ta.value=texts[0]; sel.onchange=()=>{ta.value=texts[+sel.value];draw()}; ta.oninput=draw;
+  ops.forEach(o=>{const l=document.createElement('label');l.className='chk';l.innerHTML='<input type="checkbox" data-id="'+o.id+'"> '+o.label;ob.appendChild(l);l.querySelector('input').onchange=draw});
+  function draw(){
+    let t=ta.value; const on=U.qa('input[type=checkbox]',ob).filter(i=>i.checked).map(i=>i.dataset.id);
+    ops.forEach(o=>{if(on.includes(o.id)) t=o.f(t)});
+    U.q('#cb-r',root).textContent='"'+t+'"';
+    const a=ta.value.split(/\s+/).filter(Boolean).length, b=t.split(/\s+/).filter(Boolean).length;
+    U.q('#cb-n',root).textContent='Words by split(): '+a+' before, '+b+' after. Distinct words after: '+new Set(t.split(/\s+/).filter(Boolean)).size+'.';
+    U.q('#cb-re',root).innerHTML=on.length?'Patterns used: '+ops.filter(o=>on.includes(o.id)).map(o=>'<code>'+U.esc(o.re)+'</code>').join(' &nbsp; '):'Tick a box to apply a step.';
+  }
+  draw();
+};
+
+// ---------- tokenizer playground ----------
+SIMS.tokPlay=function(sl){
+  const P=window.S2.tokpresets; let pi=0;
+  const names=[['split','text.split()'],['regex','re.findall(r"\\w+", text)'],['nltk','word_tokenize(text)'],['tweet','TweetTokenizer().tokenize(text)'],['spacy','[t.text for t in nlp(text)]']];
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row" id="tp-s"></div><div class="card" style="padding:10px 18px"><div class="small">Sentence:</div><div id="tp-x" style="font-size:30px"></div></div><div id="tp-o"></div><div class="small" style="margin-top:6px">Real output from NLTK 3 and spaCy for the presets. The first two rows are also computed live for any text you type below.</div><input type="text" id="tp-c" placeholder="type your own text for split and regex..." style="width:100%;margin-top:6px">';
+  const sb=U.q('#tp-s',root);
+  P.forEach((p,i)=>{const b=document.createElement('button');b.textContent=i+1;b.style.padding='6px 16px';b.onclick=()=>{pi=i;U.q('#tp-c',root).value='';draw()};sb.appendChild(b)});
+  function rows(p,live){
+    return names.map(n=>{let t=p[n[0]]; let tag='';
+      if(live&&n[0]==='split') t=live.split(/\s+/).filter(Boolean); else if(live&&n[0]==='regex') t=(live.match(/\w+/g)||[]); else if(live) {t=null}
+      if(t===null) return '<tr><td class="l"><code>'+U.esc(n[1])+'</code></td><td class="l muted">(preset sentences only)</td><td></td></tr>';
+      return '<tr><td class="l" style="width:34%"><code style="font-size:20px">'+U.esc(n[1])+'</code></td><td class="l">'+U.toks(t,n[0]==='nltk'?'n':n[0]==='spacy'?'e':'')+'</td><td><b>'+t.length+'</b></td></tr>';}).join('');
+  }
+  function draw(){
+    U.qa('button',sb).forEach((b,i)=>b.classList.toggle('alt',i!==pi));
+    const live=U.q('#tp-c',root).value.trim();
+    U.q('#tp-x',root).textContent=live||P[pi].text;
+    U.q('#tp-o',root).innerHTML='<table class="tbl" style="width:100%;font-size:24px"><tr><th>Method</th><th>Tokens</th><th>n</th></tr>'+rows(P[pi],live||null)+'</table>';
+  }
+  U.q('#tp-c',root).oninput=draw; draw();
+};
+
+// ---------- Porter stepper ----------
+SIMS.porterStep=function(sl){
+  const why={'1a':'plurals: sses&rarr;ss, ies&rarr;i, s&rarr;(nothing)','1b':'-ed / -ing removed if a vowel remains; then tidy up (at&rarr;ate, double letter, add e)','1c':'final y&rarr;i if a consonant precedes it','2':'long suffixes made shorter (ational&rarr;ate, ization&rarr;ize ...)','3':'suffixes -icate, -ative, -ful, -ness removed or shortened','4':'remove -al, -ance, -er, -ment, -ion ... only if the stem is long enough (measure &gt; 1)','5a':'drop a final e when safe','5b':'ll&rarr;l when the stem is long','table':'irregular word list (NLTK extension)'};
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row"><span>Word:</span><input type="text" id="ps-w" value="relational" style="width:300px"><span id="ps-p"></span></div><div class="card"><div id="ps-t"></div><div id="ps-f" style="font-size:34px;margin-top:10px"></div></div><div class="small" style="margin-top:6px">This is a JavaScript port of NLTK\'s Porter stemmer. It gave the same stem as NLTK for all 20,074 distinct words we tested from the reviews.</div>';
+  const inp=U.q('#ps-w',root), pb=U.q('#ps-p',root);
+  ['relational','conditional','happiness','studies','running','caresses','movies','argument','generalization','was'].forEach(w=>{const b=document.createElement('button');b.textContent=w;b.className='alt';b.style.fontSize='20px';b.style.padding='4px 12px';b.onclick=()=>{inp.value=w;draw()};pb.appendChild(b)});
+  function draw(){
+    const w=inp.value.trim().toLowerCase().replace(/[^a-z]/g,''); const tr=[]; const s=porter(w,tr);
+    let h='<table class="tbl" style="width:100%;font-size:26px"><tr><th>Step</th><th>What it does</th><th>Before</th><th>After</th></tr>';
+    if(!tr.length) h+='<tr><td colspan="4" class="l muted">No rule fired. The word is already a stem (or too short to change).</td></tr>';
+    tr.forEach(r=>{h+='<tr class="hl"><td>'+r[0]+'</td><td class="l" style="font-size:22px">'+why[r[0]]+'</td><td>'+U.esc(r[1])+'</td><td><b>'+U.esc(r[2])+'</b></td></tr>'});
+    U.q('#ps-t',root).innerHTML=h+'</table>';
+    U.q('#ps-f',root).innerHTML=U.tok(w)+' &rarr; '+U.tok(s,'e');
+  }
+  inp.oninput=draw; draw();
+};
+
+// ---------- lemma lookup ----------
+SIMS.lemmaLookup=function(sl){
+  const L=window.S2.lemmas;
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row"><span>Word:</span><input type="text" id="ll-w" value="better" style="width:260px"><span style="margin-left:14px">tell the lemmatizer it is a:</span><label class="chk"><input type="radio" name="llp" value="0" checked> noun (default)</label><label class="chk"><input type="radio" name="llp" value="1"> verb</label><label class="chk"><input type="radio" name="llp" value="2"> adjective</label></div><div class="row" id="ll-p"></div><div class="card"><table class="tbl" style="width:100%;font-size:30px" id="ll-t"></table><div class="small" id="ll-x" style="margin-top:8px"></div></div>';
+  const inp=U.q('#ll-w',root);
+  ['better','was','running','saw','mice','studies','leaves','happier','movies','acting'].forEach(w=>{const b=document.createElement('button');b.textContent=w;b.className='alt';b.style.fontSize='20px';b.style.padding='4px 12px';b.onclick=()=>{inp.value=w;draw()};U.q('#ll-p',root).appendChild(b)});
+  function draw(){
+    const w=inp.value.trim().toLowerCase().replace(/[^a-z]/g,''); const p=+U.q('input[name=llp]:checked',root).value;
+    const lem=(L[w]||[w,w,w]); const names=['noun','verb','adjective'];
+    U.q('#ll-t',root).innerHTML='<tr><th>as a...</th><th>lemma</th></tr>'+lem.map((l,i)=>'<tr class="'+(i===p?'hl':'')+'"><td class="l">'+names[i]+'</td><td><b>'+U.esc(l)+'</b></td></tr>').join('')+'<tr><td class="l">Porter <b>stem</b> (for comparison)</td><td><b>'+U.esc(porter(w))+'</b></td></tr>';
+    const same=lem[0]===lem[1]&&lem[1]===lem[2];
+    U.q('#ll-x',root).innerHTML=same?'The lemmatizer gives the same answer whatever the part of speech. Either the word is already a base form, or WordNet does not know it (it returns unknown words unchanged).':'<b>The answer depends on the part of speech.</b> If you do not tell NLTK the POS, it assumes noun. That is why the default call turns "was" into the non-word "wa" and leaves "running" alone.';
+  }
+  inp.oninput=draw; U.qa('input[name=llp]',root).forEach(i=>i.onchange=draw); draw();
+};
+
+// ---------- top words with toggles ----------
+SIMS.topWords=function(sl){
+  const D=window.S2; const sets={raw:['split() only, nothing removed',D.top_raw],nop:['punctuation removed',D.top_nop],sw:['punctuation and stop words removed',D.top_nosw]};
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row"><button data-k="raw">1. raw split()</button><button data-k="nop">2. no punctuation</button><button data-k="sw">3. no stop words</button></div><div class="card"><div class="small" id="tw-d"></div><div id="tw-b" style="margin-top:8px"></div></div>';
+  const btns=U.qa('button',root);
+  function pick(k){btns.forEach(b=>b.classList.toggle('alt',b.dataset.k!==k));U.q('#tw-d',root).textContent='15 most frequent tokens in 2000 reviews: '+sets[k][0];
+    U.q('#tw-b',root).innerHTML=U.hbars(sets[k][1].map(r=>[r[0],r[1]]),{lw:130,fs:23,h:22,max:D.top_raw[0][1]});}
+  btns.forEach(b=>b.onclick=()=>pick(b.dataset.k)); pick('raw');
+};
+
+// ---------- vocabulary shrink ----------
+SIMS.vocabShrink=function(sl){
+  const D=window.S2;
+  const steps=[['1. raw split()',D.raw],['2. lowercase',D.lower],['3. punctuation removed',D.nopunct],['4. stop words removed',D.nostop],['5a. then stemmed',D.stem],['5b. or lemmatized (noun)',D.lemma_noun]];
+  const root=U.q('.sim',sl); let k=0;
+  root.innerHTML='<div class="row"><button id="vs-n">show next step</button><button id="vs-r" class="alt">reset</button></div><div class="card"><div class="small">Distinct words in the vocabulary (bar) and total tokens (number), 2000 reviews</div><div id="vs-b"></div><div class="small" id="vs-x" style="margin-top:8px"></div></div>';
+  const notes=['Starting point. Every different string counts as a separate word, including "," and ".".','No change at all: this corpus is already lowercase. On tweets or news it would matter a lot.','Punctuation tokens vanish, and words glued to them merge. About 1.6 thousand fewer words, 200 thousand fewer tokens.','The vocabulary barely moves, but half of all tokens disappear. Stop words are few, but extremely frequent.','The big win: about 28 percent fewer distinct words.','Smaller win with the default noun setting. With POS information it would do more (Session 3).'];
+  function draw(){
+    U.q('#vs-b',root).innerHTML=U.hbars(steps.slice(0,k+1).map((s,i)=>[s[0],s[1][0],i===k?'var(--orange)':'var(--teal)']),{max:steps[0][1][0],lw:300,fs:24,vw:150})+'<div class="small" style="margin-left:310px">tokens: '+steps.slice(0,k+1).map(s=>U.fmt(s[1][1])).join(' &rarr; ')+'</div>';
+    U.q('#vs-x',root).textContent=notes[k]; U.q('#vs-n',root).disabled=k>=steps.length-1;
+  }
+  U.q('#vs-n',root).onclick=()=>{k++;draw()}; U.q('#vs-r',root).onclick=()=>{k=0;draw()}; draw();
+};
+
+// ---------- zipf and min count ----------
+SIMS.zipf=function(sl){
+  const Z=window.S2.zipf; const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row"><span>Keep only words that appear at least</span><input type="range" id="zp-r" min="0" max="7" step="1" value="0" style="width:340px"><b id="zp-v"></b><span>times</span></div><div class="row"><div class="stat" style="flex:1"><b id="zp-a"></b>words kept in the vocabulary</div><div class="stat" style="flex:1"><b id="zp-b"></b>of all tokens still covered</div></div><div class="card"><div class="small">Frequency of the 300 most common words (rank 1 to 300)</div><svg id="zp-s" viewBox="0 0 900 250" style="width:100%;height:250px"></svg></div><div class="small" id="zp-x"></div>';
+  const ms=[1,2,3,5,10,20,50,100];
+  function draw(){
+    const m=ms[+U.q('#zp-r',root).value], t=Z.thr[m];
+    U.q('#zp-v',root).textContent=m; U.q('#zp-a',root).textContent=U.fmt(t[0])+' of '+U.fmt(Z.V); U.q('#zp-b',root).textContent=t[1]+'%';
+    const f=Z.freqs_head, mx=Math.log10(f[0]); let h='';
+    f.forEach((v,i)=>{const x=20+i*(860/f.length), hh=Math.log10(v)/mx*215; h+='<rect x="'+x+'" y="'+(235-hh)+'" width="'+Math.max(1.5,860/f.length-.5)+'" height="'+hh+'" fill="'+(v>=m?'var(--teal)':'#c9d3e3')+'"/>';});
+    U.q('#zp-s',root).innerHTML=h+'<text x="20" y="248" font-size="14">rank 1</text><text x="790" y="248" font-size="14">rank 300</text>';
+    U.q('#zp-x',root).innerHTML='Only <b>'+U.fmt(Z.hapax)+'</b> words ('+Math.round(Z.hapax/Z.V*100)+'%) appear exactly once, yet they are just '+(Z.hapax/Z.N*100).toFixed(1)+'% of the text. Bar heights use a log scale.';
+  }
+  U.q('#zp-r',root).oninput=draw; draw();
+};
+
+// ---------- pipeline builder ----------
+SIMS.pipeBuilder=function(sl){
+  const D=window.S2, SW=new Set(D.stopwords);
+  const texts=["the acting was wonderful, but the plot wasn't convincing at all. i enjoyed watching the characters running through the streets, though!","Loved it!!! The actors were Amazing :) Definitely recommend watching it again & again."];
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row"><select id="pb-t"></select><label class="chk"><input type="checkbox" data-o="low"> lowercase</label><label class="chk"><input type="checkbox" data-o="pun"> strip punctuation</label><label class="chk"><input type="checkbox" data-o="sw"> stop words</label><label class="chk"><input type="radio" name="pbn" value="none" checked> no normalise</label><label class="chk"><input type="radio" name="pbn" value="stem"> stem</label><label class="chk"><input type="radio" name="pbn" value="lemma"> lemmatize</label></div><div class="card"><div class="small">Tokens for this text:</div><div id="pb-o" style="margin:6px 0"></div><div class="small" id="pb-n"></div></div><div class="card"><div class="small">Measured on all 2000 reviews with the same choices (punctuation, stop words, normalise; the corpus is already lowercase)</div><div id="pb-b"></div></div>';
+  const sel=U.q('#pb-t',root); texts.forEach((t,i)=>{const o=document.createElement('option');o.value=i;o.textContent=i?'a messy tweet-like review':'a review excerpt';sel.appendChild(o)});
+  function draw(){
+    const on=o=>U.q('input[data-o='+o+']',root).checked, nm=U.q('input[name=pbn]:checked',root).value;
+    let t=texts[+sel.value]; if(on('low')) t=t.toLowerCase();
+    let tk=t.split(/\s+/).filter(Boolean);
+    if(on('pun')) tk=tk.map(w=>w.replace(/[^A-Za-z0-9']/g,'')).filter(Boolean);
+    const before=tk.slice();
+    if(on('sw')) tk=tk.filter(w=>!SW.has(w.toLowerCase()));
+    if(nm==='stem') tk=tk.map(w=>porter(w)); if(nm==='lemma') tk=tk.map(w=>{const l=D.lemmas[w.toLowerCase()];return l?l[0]:w});
+    U.q('#pb-o',root).innerHTML=U.toks(tk,nm==='none'?'':'e')+'';
+    U.q('#pb-n',root).textContent=tk.length+' tokens ('+new Set(tk).size+' distinct).';
+    const key=(on('pun')?1:0)+''+(on('sw')?1:0)+nm, c=D.combo[key];
+    U.q('#pb-b',root).innerHTML=U.hbars([['distinct words (vocabulary)',c[0],'var(--teal)']],{max:D.raw[0],lw:300,fs:24,vw:150})+U.hbars([['total tokens',c[1],'var(--orange)']],{max:D.raw[1],lw:300,fs:24,vw:150})+'<div class="small">Bars are scaled separately: each is compared with its own starting value ('+U.fmt(D.raw[0])+' words, '+U.fmt(D.raw[1])+' tokens).</div>';
+  }
+  U.qa('input',root).forEach(i=>i.onchange=draw); sel.onchange=draw; draw();
+};
+
+// ================= DFA / NFA simulator =================
+SIMS.dfaPresets={
+ sheep:{title:'Sheep language: baa+!',desc:'Accepts b, then a, then one or more a, then !   (baa!  baaaa!)',alpha:['b','a','!'],
+  states:[{id:'q0',x:90,y:150},{id:'q1',x:250,y:150},{id:'q2',x:410,y:150},{id:'q3',x:570,y:150},{id:'q4',x:760,y:150,acc:1}],start:'q0',
+  edges:[['q0','q1','b'],['q1','q2','a'],['q2','q3','a'],['q3','q3','a'],['q3','q4','!']],ex:['baa!','baaaaa!','ba!','baa','b!']},
+ even1:{title:'Even number of 1s',desc:'Remembers only one thing: have I seen an even or odd number of 1s so far?',alpha:['0','1'],
+  states:[{id:'EVEN',x:230,y:150,acc:1},{id:'ODD',x:620,y:150}],start:'EVEN',
+  edges:[['EVEN','EVEN','0'],['EVEN','ODD','1'],['ODD','EVEN','1'],['ODD','ODD','0']],ex:['1001','111','0000','10101','']},
+ end01:{title:'Binary strings ending in 01',desc:'q0 nothing useful yet, q1 last symbol was 0, q2 last two symbols were 01',alpha:['0','1'],
+  states:[{id:'q0',x:140,y:150},{id:'q1',x:440,y:150},{id:'q2',x:740,y:150,acc:1}],start:'q0',
+  edges:[['q0','q0','1'],['q0','q1','0'],['q1','q1','0'],['q1','q2','1'],['q2','q1','0'],['q2','q0','1']],ex:['01','1101','0101','100','10']},
+ not:{title:'Contains the letters n-o-t in a row',desc:'A negation detector. Letters other than n, o, t all count as "x". Careful: "note" and "knot" also contain "not".',alpha:['n','o','t','x'],map:1,
+  states:[{id:'s0',x:90,y:150},{id:'s1',x:300,y:150},{id:'s2',x:510,y:150},{id:'s3',x:740,y:150,acc:1}],start:'s0',
+  edges:[['s0','s1','n'],['s0','s0','o,t,x'],['s1','s1','n'],['s1','s2','o'],['s1','s0','t,x'],['s2','s3','t'],['s2','s1','n'],['s2','s0','o,x'],['s3','s3','n,o,t,x']],ex:['not','nothing','knot','note','good']},
+ turnstile:{title:'Turnstile gate',desc:'A real machine: c = insert coin, p = push the bar. We say the run "accepts" if the gate ends up unlocked.',alpha:['c','p'],
+  states:[{id:'LOCKED',x:230,y:150},{id:'UNLOCKED',x:640,y:150,acc:1}],start:'LOCKED',
+  edges:[['LOCKED','LOCKED','p'],['LOCKED','UNLOCKED','c'],['UNLOCKED','UNLOCKED','c'],['UNLOCKED','LOCKED','p']],ex:['c','pp','cp','ccp','pcc']},
+ nfa01:{title:'NFA: ends in 01 (guessing machine)',desc:'In state A on a 0 the machine may stay in A or move to B. It follows both options at once. Orange states are all the states it is in right now.',alpha:['0','1'],nfa:1,
+  states:[{id:'A',x:140,y:150},{id:'B',x:440,y:150},{id:'C',x:740,y:150,acc:1}],start:'A',
+  edges:[['A','A','0,1'],['A','B','0'],['B','C','1']],ex:['01','1101','100','0101']}
+};
+SIMS.dfaSim=function(sl){
+  const root=U.q('.sim',sl); const names=(root.dataset.dfa||'sheep').split(',');
+  let P, st;
+  root.innerHTML='<div class="row" id="df-tabs"></div><div class="small" id="df-desc"></div><svg id="df-svg" viewBox="0 0 860 300" style="width:100%;height:300px;background:var(--panel);border-radius:12px"></svg><div class="row" style="margin-top:6px"><span>Input:</span><input type="text" id="df-in" style="width:260px;font-family:monospace"><button id="df-reset" class="alt">reset</button><button id="df-step">step &rarr;</button><button id="df-run" class="alt">run all</button><span id="df-ex"></span></div><div id="df-tr"></div><div id="df-v" style="font-size:30px;margin-top:4px"></div>';
+  const svg=U.q('#df-svg',root), inp=U.q('#df-in',root);
+  const tabs=U.q('#df-tabs',root);
+  names.forEach(n=>{const b=document.createElement('button');b.textContent=SIMS.dfaPresets[n].title;b.style.fontSize='21px';b.onclick=()=>load(n);tabs.appendChild(b)});
+  if(names.length<2) tabs.style.display='none';
+  function sym(c){ if(P.map&&!'not'.includes(c)) return 'x'; return c; }
+  function load(n){P=SIMS.dfaPresets[n];U.qa('button',tabs).forEach((b,i)=>b.classList.toggle('alt',names[i]!==n));
+    U.q('#df-desc',root).textContent=P.desc; const ex=U.q('#df-ex',root); ex.innerHTML='';
+    P.ex.forEach(e=>{const b=document.createElement('button');b.className='alt';b.style.cssText='font-size:20px;padding:3px 10px;font-family:monospace';b.textContent=e===''?'(empty)':e;b.onclick=()=>{inp.value=e;reset()};ex.appendChild(b)});
+    inp.value=P.ex[0];reset();}
+  function reset(){st={i:0,cur:[P.start],trace:[],last:null,stuck:false};draw();}
+  function stepOnce(){
+    const s=inp.value; if(st.stuck||st.i>=s.length) return false;
+    const c=sym(s[st.i]); let next=[], used=[];
+    st.cur.forEach(q=>P.edges.forEach(e=>{ if(e[0]===q && e[2].split(',').includes(c)){ next.push(e[1]); used.push(e);} }));
+    next=[...new Set(next)];
+    st.trace.push({n:st.i+1,sym:s[st.i],from:st.cur.slice(),to:next.slice(),shown:c});
+    st.last=used; if(!next.length){st.stuck=true; st.cur=[];} else st.cur=next; st.i++; draw(); return true;
+  }
+  U.q('#df-step',root).onclick=stepOnce; U.q('#df-reset',root).onclick=reset;
+  U.q('#df-run',root).onclick=()=>{reset(); while(stepOnce()){} };
+  inp.oninput=reset;
+  function pos(id){const s=P.states.find(x=>x.id===id);return s;}
+  function draw(){
+    // fit the layout to the canvas and size circles to the longest state name
+    const xs=P.states.map(q=>q.x), mn=Math.min.apply(null,xs), mx=Math.max.apply(null,xs);
+    const maxLen=Math.max.apply(null,P.states.map(q=>q.id.length)); const R=Math.max(38,maxLen*7.2+14), FS=maxLen>5?19:26;
+    P.states.forEach(q=>{q._x=mx===mn?430:110+(q.x-mn)*(640/(mx-mn)); q._y=150;});
+    const X=id=>pos(id)._x, Y=id=>pos(id)._y;
+    let h='<defs><marker id="ah" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 z" fill="#1b2a49"/></marker><marker id="ao" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 z" fill="#e8590c"/></marker></defs>';
+    P.edges.forEach((e,idx)=>{
+      const ax=X(e[0]), ay=Y(e[0]), bx=X(e[1]), by=Y(e[1]); const hot=st.last&&st.last.includes(e); const col=hot?'#e8590c':'#1b2a49', mk=hot?'ao':'ah', w=hot?4:2.5;
+      const lab='<text x="LX" y="LY" text-anchor="middle" font-size="26" font-weight="600" fill="'+col+'" stroke="#fff" stroke-width="5" paint-order="stroke">'+U.esc(e[2])+'</text>';
+      if(e[0]===e[1]){ const x=ax,y=ay-R; h+='<path d="M'+(x-20)+','+(y+2)+' C'+(x-52)+','+(y-58)+' '+(x+52)+','+(y-58)+' '+(x+20)+','+(y+2)+'" fill="none" stroke="'+col+'" stroke-width="'+w+'" marker-end="url(#'+mk+')"/>'+lab.replace('LX',x).replace('LY',y-52); return; }
+      const rev=P.edges.some(o=>o[0]===e[1]&&o[1]===e[0]); const dx=bx-ax, dy=by-ay, L=Math.hypot(dx,dy), ux=dx/L, uy=dy/L, nx=-uy, ny=ux;
+      let d,lx,ly;
+      if(Math.abs(dx)>330 && !rev){ const sgn=dx<0?1:-1; const sy=ay+sgn*R, ey=by+sgn*(R+6); const cy=ay+sgn*125; d='M'+ax+','+sy+' Q'+((ax+bx)/2)+','+(cy+sgn*60)+' '+bx+','+ey; lx=(ax+bx)/2; ly=cy+sgn*(30)+(sgn>0?16:-2); }
+      else if(rev){ const sx=ax+ux*R*0.92+nx*14, sy=ay+uy*R*0.92+ny*14, ex=bx-ux*(R+8)+nx*14, ey=by-uy*(R+8)+ny*14; const off=70; const cx=(ax+bx)/2+nx*off*2, cy=(ay+by)/2+ny*off*2; d='M'+sx+','+sy+' Q'+cx+','+cy+' '+ex+','+ey; lx=(ax+bx)/2+nx*(off+22); ly=(ay+by)/2+ny*(off+22)+8; }
+      else { const sx=ax+ux*R, sy=ay+uy*R, ex=bx-ux*(R+8), ey=by-uy*(R+8); d='M'+sx+','+sy+' L'+ex+','+ey; lx=(sx+ex)/2; ly=(sy+ey)/2-14; }
+      h+='<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="'+w+'" marker-end="url(#'+mk+')"/>'+lab.replace('LX',lx).replace('LY',ly);
+    });
+    P.states.forEach(q=>{
+      const on=st.cur.includes(q.id);
+      h+='<circle cx="'+q._x+'" cy="'+q._y+'" r="'+R+'" fill="'+(on?'#ffd8a8':'#fff')+'" stroke="'+(on?'#e8590c':'#1b2a49')+'" stroke-width="'+(on?5:2.5)+'"/>';
+      if(q.acc) h+='<circle cx="'+q._x+'" cy="'+q._y+'" r="'+(R-8)+'" fill="none" stroke="#1b2a49" stroke-width="2.5"/>';
+      h+='<text x="'+q._x+'" y="'+(q._y+FS*0.35)+'" text-anchor="middle" font-size="'+FS+'" font-weight="700">'+q.id+'</text>';
+    });
+    const sp=pos(P.start); h+='<path d="M'+(sp._x-R-60)+','+sp._y+' L'+(sp._x-R-4)+','+sp._y+'" stroke="#1b2a49" stroke-width="3" marker-end="url(#ah)"/><text x="'+(sp._x-R-62)+'" y="'+(sp._y-12)+'" font-size="20" fill="#4a5a7a">start</text>';
+    svg.innerHTML=h;
+    const s=inp.value;
+    let t='<table class="tbl sm" style="font-size:22px"><tr><th>input so far</th>'+[...s].map((c,i)=>'<td style="'+(i<st.i?'background:#ffd8a8':'')+(i===st.i?';outline:3px solid #e8590c':'')+'">'+U.esc(c)+'</td>').join('')+'</tr></table>';
+    t+='<table class="tbl sm" style="font-size:22px;margin-top:4px"><tr><th>step</th><th>read</th><th>from</th><th>to</th></tr>'+st.trace.slice(-5).map(r=>'<tr><td>'+r.n+'</td><td><b>'+U.esc(r.sym)+'</b>'+(r.sym!==r.shown?' (as '+r.shown+')':'')+'</td><td>'+r.from.join(', ')+'</td><td>'+(r.to.length?'<b>'+r.to.join(', ')+'</b>':'<b style="color:#c0392b">no arrow: stuck</b>')+'</td></tr>').join('')+'</table>';
+    U.q('#df-tr',root).innerHTML=t;
+    const fin=st.i>=s.length||st.stuck; let v='';
+    if(fin){ const acc=st.cur.some(q=>pos(q).acc); v=acc?'<span class="good"><b>ACCEPT</b></span> &nbsp;ended in an accepting state ('+st.cur.join(', ')+')':(st.stuck?'<span style="color:#c0392b"><b>REJECT</b></span> &nbsp;no arrow for that symbol':'<span style="color:#c0392b"><b>REJECT</b></span> &nbsp;ended in '+st.cur.join(', ')+', which is not accepting'); }
+    else v='<span class="muted">Press "step" to read the next symbol ('+(s.length-st.i)+' left).</span>';
+    U.q('#df-v',root).innerHTML=v;
+  }
+  load(names[0]);
+};
+
+// ================= regex tester =================
+SIMS.regexTester=function(sl){
+  const presets=[
+   {n:'email',re:'[\\w.]+@[\\w.]+\\.\\w+',t:'Mail rao@nlp.org or support.team@mitu.edu.in, not @home or a@b.',ex:[['[\\w.]+','one or more letters, digits, underscore or dots (the name part)'],['@','a literal @'],['[\\w.]+\\.\\w+','a domain: letters/dots, then a literal dot (\\.), then letters']]},
+   {n:'phone (India)',re:'\\b[6-9]\\d{4}\\s?\\d{5}\\b',t:'Call 98765 43210 or 9123456789. Not 12345 67890 or 5555555555.',ex:[['\\b','a word boundary (so we do not match inside a longer number)'],['[6-9]','first digit is 6, 7, 8 or 9'],['\\d{4}','exactly four more digits'],['\\s?','an optional space (? = zero or one)'],['\\d{5}','exactly five digits'],['\\b','word boundary again']]},
+   {n:'date',re:'\\b\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4}\\b',t:'Due 12/10/2026, started 3-4-26, not 2026.10.12.',ex:[['\\d{1,2}','one or two digits (day)'],['[/-]','a slash or a hyphen'],['\\d{1,2}','month'],['\\d{2,4}','two to four digits (year)']]},
+   {n:'hashtag',re:'#\\w+',t:'Loved it #NLP #day1 but # alone and #123go count too',ex:[['#','a literal hash'],['\\w+','one or more word characters']]},
+   {n:'adjective + noun (on tags)',re:'(\\w+/JJ )+\\w+/NN',t:'the/DT old/JJ big/JJ house/NN has/VBZ a/DT red/JJ door/NN ./.',ex:[['(\\w+/JJ )+','one or more words tagged JJ (adjective), each followed by a space'],['\\w+/NN','then one word tagged NN (noun)']]}];
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row" id="rx-p"></div><div class="row"><span>Pattern:</span><input type="text" id="rx-r" style="flex:1;font-family:monospace"></div><textarea id="rx-t" rows="2" style="width:100%;font-family:monospace;font-size:26px"></textarea><div class="card"><div class="small">Matches highlighted:</div><div class="out" id="rx-o" style="font-size:28px;white-space:pre-wrap"></div><div class="small" id="rx-m"></div></div><div id="rx-e" class="small"></div>';
+  const pb=U.q('#rx-p',root), r=U.q('#rx-r',root), t=U.q('#rx-t',root);
+  presets.forEach((p,i)=>{const b=document.createElement('button');b.textContent=p.n;b.style.fontSize='21px';b.onclick=()=>{r.value=p.re;t.value=p.t;cur=i;draw()};pb.appendChild(b)});
+  let cur=0; r.value=presets[0].re; t.value=presets[0].t;
+  function draw(){
+    U.qa('button',pb).forEach((b,i)=>b.classList.toggle('alt',i!==cur));
+    let re; try{re=new RegExp(r.value,'g')}catch(e){U.q('#rx-o',root).textContent=t.value;U.q('#rx-m',root).innerHTML='<span style="color:#c0392b">Invalid pattern: '+U.esc(e.message)+'</span>';return}
+    let out='',last=0,n=0,list=[],m; const s=t.value;
+    while((m=re.exec(s))!==null){ if(m[0]===''){re.lastIndex++;continue} out+=U.esc(s.slice(last,m.index))+'<mark style="background:#ffd43b;border-radius:4px">'+U.esc(m[0])+'</mark>'; last=m.index+m[0].length; n++; list.push(m[0]); }
+    out+=U.esc(s.slice(last)); U.q('#rx-o',root).innerHTML=out;
+    U.q('#rx-m',root).innerHTML=n+' match'+(n===1?'':'es')+(n?': '+list.map(x=>'<code>'+U.esc(x)+'</code>').join(' '):'');
+    const p=presets[cur]; U.q('#rx-e',root).innerHTML=(r.value===p.re)?'<b>Read the pattern left to right:</b><br>'+p.ex.map(e=>'<code>'+U.esc(e[0])+'</code> &rarr; '+e[1]).join('<br>'):'<span class="muted">You edited the pattern. Does it still match what you expect?</span>';
+  }
+  r.oninput=draw; t.oninput=draw; draw();
+};
+
+// ================= POS ambiguity =================
+SIMS.posAmbiguity=function(sl){
+  const D=window.S3; const root=U.q('.sim',sl); let si=0, w=Object.keys(D.amb)[0];
+  root.innerHTML='<div class="row" id="pa-s"></div><div class="card"><div class="small">Tags assigned by NLTK (top row) and spaCy (bottom row)</div><div id="pa-t"></div></div><div class="card"><div class="row"><span>How is this word used in a million words of real text (Brown corpus)?</span><select id="pa-w"></select></div><div id="pa-b"></div></div>';
+  const sb=U.q('#pa-s',root); D.tagged.forEach((_,i)=>{const b=document.createElement('button');b.textContent='Sentence '+(i+1);b.style.fontSize='22px';b.onclick=()=>{si=i;draw()};sb.appendChild(b)});
+  const sel=U.q('#pa-w',root); Object.keys(D.amb).forEach(k=>{const o=document.createElement('option');o.textContent=k;sel.appendChild(o)});
+  function cell(t,tag,c){return '<span style="display:inline-block;text-align:center;margin:3px 8px 3px 0">'+U.tok(t,c)+'<br><span class="pill t" style="font-size:20px;margin-top:3px">'+tag+'</span></span>';}
+  function draw(){
+    U.qa('button',sb).forEach((b,i)=>b.classList.toggle('alt',i!==si));
+    U.q('#pa-t',root).innerHTML='<div>'+D.tagged[si].map(x=>cell(x[0],x[1])).join('')+'</div><div style="margin-top:8px">'+D.tagged_spacy[si].map(x=>cell(x[0],x[1],'e')).join('')+'</div>';
+    const rows=D.amb[sel.value]||[]; const tot=rows.reduce((a,r)=>a+r[1],0);
+    U.q('#pa-b',root).innerHTML=U.hbars(rows.map(r=>[r[0],r[1],'var(--teal)']),{lw:120,fs:24,h:24,vw:150})+'<div class="small">'+tot+' occurrences in total. '+(rows.length>1?'This single word is tagged <b>'+rows.length+'</b> different ways.':'Only one tag seen.')+'</div>';
+  }
+  sel.onchange=draw; draw();
+};
+
+// ================= morphology splitter =================
+SIMS.morphSplit=function(sl){
+  const M={
+   unhappiness:{parts:[['un','prefix','negates'],['happy','root',''],['ness','suffix','adjective to noun']],kind:'derivation',lem:'unhappiness',stem:'unhappi'},
+   walked:{parts:[['walk','root',''],['ed','suffix','past tense']],kind:'inflection',lem:'walk (as a verb)',stem:'walk'},
+   dogs:{parts:[['dog','root',''],['s','suffix','plural']],kind:'inflection',lem:'dog',stem:'dog'},
+   rewriting:{parts:[['re','prefix','again'],['writ(e)','root','the e is dropped'],['ing','suffix','progressive']],kind:'derivation + inflection',lem:'rewrite (as a verb)',stem:'rewrit'},
+   teachers:{parts:[['teach','root',''],['er','suffix','person who does it'],['s','suffix','plural']],kind:'derivation + inflection',lem:'teacher',stem:'teacher'},
+   impossible:{parts:[['im','prefix','not (in- before p)'],['possible','root','']],kind:'derivation',lem:'impossible',stem:'imposs'},
+   mice:{parts:[['mice','root + plural fused','no suffix to cut']],kind:'irregular inflection',lem:'mouse',stem:'mice'},
+   went:{parts:[['went','go + past tense, fused','no suffix to cut']],kind:'irregular inflection',lem:'go (as a verb)',stem:'went'}};
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row" id="ms-b"></div><div class="card"><div id="ms-p" style="min-height:120px"></div><div class="small" id="ms-k" style="margin-top:6px"></div></div><table class="tbl" style="width:100%;font-size:26px" id="ms-t"></table>';
+  const b=U.q('#ms-b',root);
+  Object.keys(M).forEach(k=>{const x=document.createElement('button');x.textContent=k;x.style.fontSize='22px';x.onclick=()=>draw(k);b.appendChild(x)});
+  function draw(k){
+    U.qa('button',b).forEach(x=>x.classList.toggle('alt',x.textContent!==k)); const m=M[k];
+    const col={prefix:'#fff3bf',root:'#d3f9d8',suffix:'#d0ebff'};
+    U.q('#ms-p',root).innerHTML=m.parts.map(p=>'<span style="display:inline-block;margin:4px;text-align:center"><span style="display:block;padding:10px 20px;border-radius:12px;font-size:38px;font-family:monospace;background:'+(col[p[1].split(' ')[0]]||'#e5dbff')+';border:2px solid #1b2a49">'+U.esc(p[0])+'</span><span style="font-size:21px"><b>'+p[1]+'</b>'+(p[2]?'<br>'+p[2]:'')+'</span></span>').join('<span style="font-size:38px"> + </span>');
+    U.q('#ms-k',root).innerHTML='Type of change: <b>'+m.kind+'</b>.';
+    U.q('#ms-t',root).innerHTML='<tr><th>Tool</th><th>What it returns</th></tr><tr><td class="l">Porter stemmer (Session 2)</td><td class="l"><b>'+porter(k)+'</b> (expected '+m.stem+')</td></tr><tr><td class="l">Lemma (dictionary)</td><td class="l"><b>'+m.lem+'</b></td></tr>';
+  }
+  draw('unhappiness');
+};
+
+// ================= CFG derivation =================
+SIMS.cfgDerive=function(sl){
+  const T={
+   dog:{label:'the dog chased a cat',tree:['S',['NP',['Det','the'],['N','dog']],['VP',['V','chased'],['NP',['Det','a'],['N','cat']]]],note:'A short sentence with one parse.'},
+   A:{label:'I saw the man with the telescope  (parse A: I used the telescope)',tree:['S',['NP',['Pro','I']],['VP',['VP',['V','saw'],['NP',['Det','the'],['N','man']]],['PP',['P','with'],['NP',['Det','the'],['N','telescope']]]]],note:'The PP "with the telescope" attaches to the VP: it says how I saw.'},
+   B:{label:'I saw the man with the telescope  (parse B: the man has the telescope)',tree:['S',['NP',['Pro','I']],['VP',['V','saw'],['NP',['NP',['Det','the'],['N','man']],['PP',['P','with'],['NP',['Det','the'],['N','telescope']]]]]],note:'The PP attaches to the NP: it says which man.'}};
+  const root=U.q('.sim',sl); let key=root.dataset.start||'dog', k=0, steps=[];
+  root.innerHTML='<div class="row" id="cf-b"></div><div class="row"><button id="cf-n">next rewrite &rarr;</button><button id="cf-r" class="alt">reset</button><button id="cf-a" class="alt">show full tree</button></div><svg id="cf-s" viewBox="0 0 860 330" style="width:100%;height:330px;background:var(--panel);border-radius:12px"></svg><div class="out" id="cf-f" style="font-size:27px"></div><div class="small" id="cf-n2"></div>';
+  const bb=U.q('#cf-b',root); Object.keys(T).forEach(x=>{const b=document.createElement('button');b.textContent=T[x].label;b.style.fontSize='19px';b.onclick=()=>{key=x;init()};bb.appendChild(b)});
+  let nodes; function build(t,d,par){const n={lab:t[0],kids:[],depth:d,par:par,leaf:typeof t[1]==='string'};if(n.leaf){n.word=t[1];}else t.slice(1).forEach(c=>n.kids.push(build(c,d+1,n)));return n}
+  function layout(n,ctr){ if(n.leaf&&!n.kids.length){n.x=ctr.i++;} else {n.kids.forEach(c=>layout(c,ctr)); n.x=(n.kids[0].x+n.kids[n.kids.length-1].x)/2;} if(n.leaf){} }
+  function leaves(n,a){ if(n.leaf){a.push(n)} n.kids.forEach(c=>leaves(c,a)); return a;}
+  function init(){
+    const t=T[key]; nodes=build(t.tree,0,null);
+    // words as children of preterminals
+    (function addWords(n){ if(n.leaf){const w={lab:n.word,kids:[],depth:n.depth+1,par:n,word:true,wleaf:true};n.kids=[w];n.leaf=false;n.pre=true;} else n.kids.forEach(addWords)})(nodes);
+    let i=0; (function lay(n){ if(!n.kids.length){n.x=i++} else {n.kids.forEach(lay); n.x=(n.kids[0].x+n.kids[n.kids.length-1].x)/2}})(nodes);
+    // derivation: leftmost, form is a list of nodes
+    steps=[]; let form=[nodes]; steps.push({form:form.slice(),rule:'start symbol',expanded:[]});
+    let expanded=[];
+    while(true){ const idx=form.findIndex(n=>!n.wleaf&&n.kids.length&&!expanded.includes(n)); if(idx<0) break; const n=form[idx]; expanded=expanded.concat([n]); form=form.slice(0,idx).concat(n.kids).concat(form.slice(idx+1)); steps.push({form:form.slice(),rule:n.lab+' \u2192 '+n.kids.map(c=>c.lab).join(' '),expanded:expanded.slice()}); }
+    k=0; draw();
+  }
+  function draw(all){
+    U.qa('button',bb).forEach((b,i)=>b.classList.toggle('alt',Object.keys(T)[i]!==key));
+    const s=steps[all?steps.length-1:k]; const vis=new Set(); (function mark(n){vis.add(n)})(nodes);
+    // visible = nodes in current form + all expanded ancestors
+    const show=new Set(); s.form.forEach(n=>{let p=n;while(p){show.add(p);p=p.par}});
+    const W=860, H=330, maxx=Math.max.apply(null,(function c(n){return [n.x].concat(...n.kids.map(c))})(nodes)), maxd=Math.max.apply(null,(function c(n){return [n.depth].concat(...n.kids.map(c))})(nodes));
+    const px=x=>50+x*(W-100)/Math.max(maxx,1), py=d=>34+d*(H-70)/Math.max(maxd,1);
+    let h='';
+    (function edges(n){n.kids.forEach(c=>{ if(show.has(c)&&show.has(n)) h+='<line x1="'+px(n.x)+'" y1="'+(py(n.depth)+8)+'" x2="'+px(c.x)+'" y2="'+(py(c.depth)-16)+'" stroke="#8aa0c8" stroke-width="2"/>'; edges(c)})})(nodes);
+    (function nds(n){ if(show.has(n)){ const cur=s.form.includes(n); const isw=n.wleaf;
+      h+='<text x="'+px(n.x)+'" y="'+(py(n.depth)+6)+'" text-anchor="middle" font-size="'+(isw?24:23)+'" font-weight="'+(isw?400:700)+'" font-style="'+(isw?'italic':'normal')+'" fill="'+(cur&&!isw&&n.kids.length?'#e8590c':'#1b2a49')+'">'+U.esc(n.lab)+'</text>'; } n.kids.forEach(nds)})(nodes);
+    svg=U.q('#cf-s',root); svg.innerHTML=h;
+    U.q('#cf-f',root).innerHTML='Current form: '+s.form.map(n=>n.wleaf?'<b>'+U.esc(n.lab)+'</b>':'<span style="color:#e8590c">'+n.lab+'</span>').join(' ');
+    U.q('#cf-n2',root).innerHTML='Rule applied: <code>'+s.rule+'</code> &nbsp; (step '+(all?steps.length-1:k)+' of '+(steps.length-1)+'). '+T[key].note;
+    U.q('#cf-n',root).disabled=!all&&k>=steps.length-1;
+  }
+  let svg;
+  U.q('#cf-n',root).onclick=()=>{if(k<steps.length-1){k++;draw()}}; U.q('#cf-r',root).onclick=()=>{k=0;draw()}; U.q('#cf-a',root).onclick=()=>draw(true);
+  init();
+};
+
+// ================= edit distance DP =================
+SIMS.editDist=function(sl){
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row"><span>From:</span><input type="text" id="ed-a" value="kitten" style="width:170px"><span>to:</span><input type="text" id="ed-b" value="sitting" style="width:170px"><span>substitution costs</span><select id="ed-s"><option value="1">1</option><option value="2">2</option></select><label class="chk"><input type="checkbox" id="ed-t"> swap of neighbours costs 1</label></div><div class="row"><button id="ed-1">fill next cell</button><button id="ed-r" class="alt">fill the row</button><button id="ed-all" class="alt">fill all</button><button id="ed-bt" class="alt">trace back</button><button id="ed-0" class="alt">reset</button></div><div style="overflow:auto"><div id="ed-tb"></div></div><div class="card" style="margin-top:6px;padding:8px 14px"><div id="ed-x" style="font-size:25px"></div></div><div id="ed-ops" class="small"></div>';
+  const A=U.q('#ed-a',root), B=U.q('#ed-b',root), S=U.q('#ed-s',root), T=U.q('#ed-t',root);
+  let D,m,n,k,trace;
+  function build(){
+    const a=A.value.toLowerCase().slice(0,10), b=B.value.toLowerCase().slice(0,10); const tr=T.checked; if(tr){S.value='1';} S.disabled=tr; const sc=+S.value;
+    m=a.length; n=b.length; D=[]; for(let i=0;i<=m;i++){D.push(new Array(n+1).fill(null));}
+    D.a=a; D.b=b; D.sc=sc; D.tr=tr; return D;
+  }
+  function cell(i,j){ // value and the candidates for cell (i,j)
+    const a=D.a,b=D.b; if(i===0) return {v:j,c:[null,null,null]}; if(j===0) return {v:i,c:[null,null,null]};
+    const del=D[i-1][j]+1, ins=D[i][j-1]+1, same=a[i-1]===b[j-1], sub=D[i-1][j-1]+(same?0:D.sc);
+    let sw=Infinity; if(D.tr&&i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1]) sw=D[i-2][j-2]+1;
+    return {v:Math.min(del,ins,sub,sw),c:[del,ins,sub,sw],same:same};
+  }
+  function reset(){build();for(let i=0;i<=m;i++){D[i][0]=i;} for(let j=0;j<=n;j++){D[0][j]=j;} k=0; trace=null; draw();}
+  function order(){const o=[];for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)o.push([i,j]);return o;}
+  function stepOne(){const o=order(); if(k>=o.length) return false; const [i,j]=o[k]; D[i][j]=cell(i,j).v; k++; draw(); return true;}
+  U.q('#ed-1',root).onclick=stepOne;
+  U.q('#ed-r',root).onclick=()=>{const o=order(); if(k>=o.length)return; const row=o[k][0]; while(k<o.length&&o[k][0]===row) stepOne();};
+  U.q('#ed-all',root).onclick=()=>{while(stepOne()){}};
+  U.q('#ed-0',root).onclick=reset;
+  U.q('#ed-bt',root).onclick=()=>{ while(stepOne()){} backtrace(); draw(); };
+  [A,B,S,T].forEach(e=>e.oninput=e.onchange=reset);
+  function backtrace(){
+    let i=m,j=n; const path=[[i,j]], ops=[];
+    while(i>0||j>0){
+      const c=cell(i,j).c; const v=D[i][j];
+      if(i>0&&j>0&&c[2]===v&&D[i-1][j-1]+(D.a[i-1]===D.b[j-1]?0:D.sc)===v){ ops.push(D.a[i-1]===D.b[j-1]?['keep',D.a[i-1],D.b[j-1]]:['substitute',D.a[i-1],D.b[j-1]]); i--; j--; }
+      else if(D.tr&&i>1&&j>1&&c[3]===v&&c[3]!==Infinity){ ops.push(['swap',D.a.slice(i-2,i),D.b.slice(j-2,j)]); i-=2; j-=2; path.push([i+1,j+1]); }
+      else if(i>0&&c[0]===v){ ops.push(['delete',D.a[i-1],'']); i--; }
+      else { ops.push(['insert','',D.b[j-1]]); j--; }
+      path.push([i,j]);
+    }
+    trace={path:path,ops:ops.reverse()};
+  }
+  function draw(){
+    const o=order(); const cur=k<o.length?o[k]:null; const onp=new Set((trace?trace.path:[]).map(p=>p[0]+','+p[1]));
+    let h='<table class="tbl sm" style="font-size:25px"><tr><th></th><th></th>'+[...D.b].map(c=>'<th>'+U.esc(c)+'</th>').join('')+'</tr>';
+    for(let i=0;i<=m;i++){ h+='<tr><th>'+(i===0?'':U.esc(D.a[i-1]))+'</th>'; for(let j=0;j<=n;j++){ const v=D[i][j]; const isc=cur&&cur[0]===i&&cur[1]===j; const st=(onp.has(i+','+j)?'background:#b2f2bb;font-weight:700;':'')+(isc?'outline:4px solid #e8590c;outline-offset:-3px;':'')+(i===0||j===0?'color:#6b7a99;':''); h+='<td style="min-width:50px;'+st+'">'+(v===null?'':v)+'</td>'; } h+='</tr>'; }
+    U.q('#ed-tb',root).innerHTML=h+'</table>';
+    let x='';
+    if(cur){ const [i,j]=cur, c=cell(i,j); x='Next cell <b>D['+i+']['+j+']</b> compares <b>'+(D.a.slice(0,i)||'""')+'</b> with <b>'+(D.b.slice(0,j)||'""')+'</b>. Last letters: <b>'+D.a[i-1]+'</b> vs <b>'+D.b[j-1]+'</b> ('+(c.same?'same, so substitution is free':'different, so substitution costs '+D.sc)+').<br>'
+      +'delete: '+D[i-1][j]+' + 1 = <b>'+c.c[0]+'</b> &nbsp; insert: '+D[i][j-1]+' + 1 = <b>'+c.c[1]+'</b> &nbsp; '+(c.same?'match':'substitute')+': '+D[i-1][j-1]+' + '+(c.same?0:D.sc)+' = <b>'+c.c[2]+'</b>'+(c.c[3]!==Infinity?' &nbsp; swap: <b>'+c.c[3]+'</b>':'')+' &nbsp; &rarr; take the smallest: <b style="color:#e8590c">'+c.v+'</b>'; }
+    else x='<b>Table complete.</b> The edit distance from <b>'+D.a+'</b> to <b>'+D.b+'</b> is <b style="color:#e8590c">'+D[m][n]+'</b> (bottom-right cell).';
+    U.q('#ed-x',root).innerHTML=x;
+    U.q('#ed-ops',root).innerHTML=trace?'<b>Edits along the green path:</b> '+trace.ops.map(p=>p[0]==='keep'?'<span class="tok">'+p[1]+'</span>':p[0]==='substitute'?'<span class="tok e">'+p[1]+'&rarr;'+p[2]+'</span>':p[0]==='delete'?'<span class="tok x">delete '+p[1]+'</span>':p[0]==='insert'?'<span class="tok n">insert '+p[2]+'</span>':'<span class="tok e">swap '+p[1]+'&rarr;'+p[2]+'</span>').join(''):'';
+  }
+  reset();
+};
+
+// ================= spelling corrector =================
+SIMS.spellFix=function(sl){
+  const C=window.S4.counts; const L='abcdefghijklmnopqrstuvwxyz'; const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row"><span>Word:</span><input type="text" id="sp-w" value="gud" style="width:240px"></div><div class="row" id="sp-p"></div><div class="row"><span>Penalty for each extra edit:</span><input type="range" id="sp-k" min="0" max="40" value="15" style="width:300px"><b id="sp-kv"></b></div><div class="small">Score = log10(frequency) &minus; penalty &times; edits. Penalty 0 trusts frequency only. A big penalty trusts closeness only.</div><div id="sp-o"></div>';
+  const inp=U.q('#sp-w',root); ['teh','gud','moive','recieve','goood','speilberg','acter','xqzvt'].forEach(w=>{const b=document.createElement('button');b.textContent=w;b.className='alt';b.style.cssText='font-size:21px;padding:4px 12px';b.onclick=()=>{inp.value=w;draw()};U.q('#sp-p',root).appendChild(b)});
+  function edits1(w){const sp=[];for(let i=0;i<=w.length;i++)sp.push([w.slice(0,i),w.slice(i)]);const r=new Set();
+    sp.forEach(([a,b])=>{ if(b) r.add(a+b.slice(1)); if(b.length>1) r.add(a+b[1]+b[0]+b.slice(2)); if(b) for(const c of L) r.add(a+c+b.slice(1)); for(const c of L) r.add(a+c+b); }); return r;}
+  function draw(){
+    const w=inp.value.trim().toLowerCase().replace(/[^a-z]/g,'').slice(0,12); const k=+U.q('#sp-k',root).value/10; U.q('#sp-kv',root).textContent=k.toFixed(1);
+    if(!w){U.q('#sp-o',root).innerHTML='';return}
+    const known=C[w]; const e1=edits1(w); const cand=new Map();
+    e1.forEach(x=>{ if(C[x]&&x!==w) cand.set(x,1) });
+    if(w.length<=9){ const seen=new Set(e1); e1.forEach(x=>{ edits1(x).forEach(y=>{ if(!seen.has(y)){ seen.add(y); if(C[y]&&y!==w&&!cand.has(y)) cand.set(y,2) } }) }); }
+    let rows=[...cand.entries()].map(([x,d])=>({w:x,d:d,c:C[x],s:Math.log10(C[x])-k*d})).sort((a,b)=>b.s-a.s).slice(0,7);
+    let h=(known?'<div class="card" style="padding:8px 14px;font-size:25px"><b>'+w+'</b> is already in the vocabulary ('+known+' times). A corrector that always changes words would be wrong here.</div>':'<div class="card" style="padding:8px 14px;font-size:25px"><b>'+w+'</b> is <b>not</b> in the vocabulary (words seen at least 3 times in the 2000 reviews). Candidates within 2 edits:</div>');
+    h+='<table class="tbl sm" style="width:100%;font-size:25px"><tr><th>rank</th><th>candidate</th><th>edits</th><th>frequency in reviews</th><th>score</th></tr>'+(rows.length?rows.map((r,i)=>'<tr class="'+(i===0?'hl':'')+'"><td>'+(i+1)+'</td><td><b>'+r.w+'</b></td><td>'+r.d+'</td><td>'+U.fmt(r.c)+'</td><td>'+r.s.toFixed(2)+'</td></tr>').join(''):'<tr><td colspan="5" class="muted">No known word within 2 edits. Leave the word as it is.</td></tr>')+'</table>';
+    U.q('#sp-o',root).innerHTML=h;
+  }
+  inp.oninput=draw; U.q('#sp-k',root).oninput=draw; draw();
+};
+
+// ================= character n-gram overlap =================
+SIMS.charNgram=function(sl){
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row"><span>Word 1:</span><input type="text" id="cn-a" value="good" style="width:190px"><span>Word 2:</span><input type="text" id="cn-b" value="goood" style="width:190px"><span>n =</span><select id="cn-n"><option>2</option><option selected>3</option><option>4</option></select></div><div class="row" id="cn-p"></div><div class="card"><div id="cn-o" style="font-size:28px"></div></div>';
+  const a=U.q('#cn-a',root), b=U.q('#cn-b',root), nn=U.q('#cn-n',root);
+  [['good','goood'],['movie','moive'],['running','runing'],['happy','sad'],['cinema','cinematography']].forEach(p=>{const x=document.createElement('button');x.textContent=p[0]+' / '+p[1];x.className='alt';x.style.cssText='font-size:21px;padding:4px 12px';x.onclick=()=>{a.value=p[0];b.value=p[1];draw()};U.q('#cn-p',root).appendChild(x)});
+  function grams(w,n){w='#'+w.toLowerCase()+'#';const s=new Set();for(let i=0;i<=w.length-n;i++)s.add(w.slice(i,i+n));return s}
+  function draw(){const n=+nn.value, A=grams(a.value,n), B=grams(b.value,n); const I=[...A].filter(x=>B.has(x)), Un=new Set([...A,...B]);
+    U.q('#cn-o',root).innerHTML='<div><b>'+U.esc(a.value)+'</b>: '+[...A].map(x=>U.tok(x,B.has(x)?'n':'')).join('')+'</div><div style="margin-top:6px"><b>'+U.esc(b.value)+'</b>: '+[...B].map(x=>U.tok(x,A.has(x)?'n':'')).join('')+'</div><div style="margin-top:10px">Shared: <b>'+I.length+'</b> of '+Un.size+' distinct pieces. Overlap (Jaccard) = <b style="color:#e8590c">'+(Un.size?(I.length/Un.size*100).toFixed(0):0)+'%</b></div><div class="small"># marks the start and end of a word. Green pieces appear in both.</div>';}
+  [a,b,nn].forEach(e=>e.oninput=e.onchange=draw); draw();
+};
+
+// ================= OOV summary =================
+SIMS.oovBars=function(sl){
+  const O=window.S4.oov; const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row"><button data-m="1">vocabulary: every training word</button><button data-m="2" class="alt">vocabulary: words seen at least twice</button></div><div class="card"><div class="small">Test set: 400 reviews the model has never seen. How much of it falls outside the training vocabulary?</div><div id="oo-b"></div><div class="small" id="oo-x" style="margin-top:8px"></div></div>';
+  const bs=U.qa('button',root);
+  function pick(m){bs.forEach(b=>b.classList.toggle('alt',b.dataset.m!==m));
+    const tok=m==='1'?O.oov_tok_pct:O.oov_tok_pct_min2; const vs=m==='1'?O.train_vocab:O.vocab_min2;
+    U.q('#oo-b',root).innerHTML='<div class="small">Training vocabulary size: <b>'+U.fmt(vs)+'</b> words</div>'+U.hbars([['distinct test words never seen',O.oov_type_pct,'var(--orange)'],['test tokens never seen',tok,'var(--teal)']],{max:20,lw:330,vw:90,fs:24}).replace(/(\d+(\.\d+)?)<\/div><\/div>$/,'$1%</div></div>');
+    U.q('#oo-x',root).innerHTML=m==='1'?'<b>'+O.oov_type_pct+'%</b> of the <i>kinds</i> of words in the test set are new ('+U.fmt(O.oov_types)+' of '+U.fmt(O.test_types)+'), but they are only <b>'+O.oov_tok_pct+'%</b> of the running text ('+U.fmt(O.oov_tokens)+' of '+U.fmt(O.test_tokens)+' tokens).':'Cutting rare words out of the vocabulary makes the matrix narrower, but now <b>'+tok+'%</b> of test tokens are unknown. Every vocabulary choice trades width against unknown words.';}
+  bs.forEach(b=>b.onclick=()=>pick(b.dataset.m)); pick('1');
+};
+
+// ================= TF-IDF calculator =================
+SIMS.tfidfCalc=function(sl){
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="small">One document per line (up to 6). Edit them and everything recomputes.</div><textarea id="tf-d" rows="4" style="width:100%;font-size:30px">the film was good good fun\nthe film was bad\nthe plot was not good\ngreat acting and a great plot</textarea><div class="row" id="tf-s"></div><div style="overflow:auto"><div id="tf-t"></div></div><div class="small" id="tf-x"></div><div class="row"><span>Query:</span><input type="text" id="tf-q" value="good plot" style="width:300px"><span id="tf-r"></span></div>';
+  const ta=U.q('#tf-d',root); let stage=0;
+  const names=['1. counts','2. idf','3. counts x idf','4. length-normalised (final)'];
+  const sb=U.q('#tf-s',root); names.forEach((n,i)=>{const b=document.createElement('button');b.textContent=n;b.style.fontSize='26px';b.onclick=()=>{stage=i;draw()};sb.appendChild(b)});
+  function tok(t){return (t.toLowerCase().match(/\b\w\w+\b/g)||[]);}
+  function model(){
+    const docs=ta.value.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,6); const T=docs.map(tok);
+    const vocab=[...new Set([].concat(...T))].sort(); const N=docs.length;
+    const C=T.map(t=>vocab.map(w=>t.filter(x=>x===w).length)); const df=vocab.map((w,j)=>C.filter(r=>r[j]>0).length);
+    const idf=df.map(d=>Math.log((1+N)/(1+d))+1); const W=C.map(r=>r.map((c,j)=>c*idf[j]));
+    const Nn=W.map(r=>{const n=Math.sqrt(r.reduce((a,b)=>a+b*b,0))||1;return r.map(v=>v/n)});
+    return {docs,vocab,C,df,idf,W,Nn,N};
+  }
+  function fmt(v,s){return s===0?String(v):v.toFixed(2);}
+  function draw(){
+    U.qa('button',sb).forEach((b,i)=>b.classList.toggle('alt',i!==stage));
+    const M=model(); if(!M.docs.length){U.q('#tf-t',root).innerHTML='';return}
+    const mat=stage===0?M.C:stage===1?null:stage===2?M.W:M.Nn;
+    let h='<table class="tbl sm" style="font-size:27px"><tr><th></th>'+M.vocab.map(w=>'<th>'+U.esc(w)+'</th>').join('')+'</tr>';
+    if(stage===0||stage>=2){ M.docs.forEach((d,i)=>{ h+='<tr><th>doc '+(i+1)+'</th>'+mat[i].map(v=>'<td style="'+(v>0?'background:rgba(15,118,110,'+Math.min(.55,v/(stage===0?3:stage===2?5:1)*.5+.1)+')':'color:#9aa6bd')+'">'+(stage===0?v:v.toFixed(2))+'</td>').join('')+'</tr>'; }); }
+    if(stage>=1) h+='<tr class="hl"><th>df</th>'+M.df.map(v=>'<td>'+v+'</td>').join('')+'</tr><tr class="hl"><th>idf</th>'+M.idf.map(v=>'<td><b>'+v.toFixed(2)+'</b></td>').join('')+'</tr>';
+    if(stage===1) h+='<tr><td colspan="'+(M.vocab.length+1)+'" class="l small">df = in how many documents the word appears. idf = ln((1+N)/(1+df)) + 1, with N = '+M.N+'. Rarer words get a bigger idf.</td></tr>';
+    U.q('#tf-t',root).innerHTML=h+'</table>';
+    const ex=['Raw counts: how many times each word occurs in each document.','Each word gets one idf number for the whole collection: the fewer documents contain it, the larger it is.','Multiply each count by the idf of its column. Words in every document are boosted least.','Divide each row by its own length so every document vector has length 1 (L2 norm). This is exactly what scikit-learn\'s TfidfVectorizer returns.'];
+    U.q('#tf-x',root).textContent=ex[stage];
+    // query ranking with final vectors
+    const q=tok(U.q('#tf-q',root).value); const qv=M.vocab.map((w,j)=>q.filter(x=>x===w).length*M.idf[j]); const qn=Math.sqrt(qv.reduce((a,b)=>a+b*b,0));
+    const sc=M.Nn.map((r,i)=>[i,qn?r.reduce((a,v,j)=>a+v*qv[j],0)/qn:0]).sort((a,b)=>b[1]-a[1]);
+    U.q('#tf-r',root).innerHTML=qn?sc.map(s=>'<span class="pill '+(s[1]>0?'t':'')+'" style="font-size:26px">doc '+(s[0]+1)+': '+s[1].toFixed(2)+'</span>').join(' '):'<span class="muted">no query word in the vocabulary</span>';
+  }
+  ta.oninput=draw; U.q('#tf-q',root).oninput=draw; draw();
+};
+
+// ================= cosine demo =================
+SIMS.cosineDemo=function(sl){
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row"><button data-p="3,1,6,2">same direction, B twice as long</button><button data-p="4,0,0,4">opposite sentiment</button><button data-p="3,1,1,3">similar-ish</button></div><div class="row"><span>Doc A: good =</span><input type="range" id="cd-ag" min="0" max="8" value="3"><span>bad =</span><input type="range" id="cd-ab" min="0" max="8" value="1"></div><div class="row"><span>Doc B: good =</span><input type="range" id="cd-bg" min="0" max="8" value="6"><span>bad =</span><input type="range" id="cd-bb" min="0" max="8" value="2"></div><svg id="cd-s" viewBox="0 0 860 330" style="width:100%;height:490px;background:var(--panel);border-radius:12px"></svg><div class="row"><div class="stat" style="flex:1"><b id="cd-c"></b>cosine similarity</div><div class="stat" style="flex:1"><b id="cd-e"></b>straight-line distance</div></div>';
+  const ids=['cd-ag','cd-ab','cd-bg','cd-bb'].map(i=>U.q('#'+i,root));
+  U.qa('button',root).forEach(b=>b.onclick=()=>{b.dataset.p.split(',').forEach((v,i)=>ids[i].value=v);draw()});
+  function draw(){
+    const [ag,ab,bg,bb]=ids.map(i=>+i.value), O=[70,290], sc=34;
+    const P=(g,b)=>[O[0]+g*sc*1.3,O[1]-b*sc*1.3];
+    const dot=ag*bg+ab*bb, na=Math.hypot(ag,ab), nb=Math.hypot(bg,bb), cos=na&&nb?dot/(na*nb):0, ed=Math.hypot(ag-bg,ab-bb);
+    let h='<defs><marker id="cA" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 z" fill="#0f766e"/></marker><marker id="cB" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 z" fill="#e8590c"/></marker></defs>';
+    h+='<line x1="'+O[0]+'" y1="'+O[1]+'" x2="820" y2="'+O[1]+'" stroke="#8aa0c8" stroke-width="2"/><line x1="'+O[0]+'" y1="'+O[1]+'" x2="'+O[0]+'" y2="20" stroke="#8aa0c8" stroke-width="2"/><text x="840" y="'+(O[1]+28)+'" font-size="22" text-anchor="end">count of "good"</text><text x="'+(O[0]+10)+'" y="30" font-size="22">count of "bad"</text>';
+    const a=P(ag,ab), b=P(bg,bb);
+    h+='<line x1="'+O[0]+'" y1="'+O[1]+'" x2="'+a[0]+'" y2="'+a[1]+'" stroke="#0f766e" stroke-width="5" marker-end="url(#cA)"/><text x="'+(a[0]+8)+'" y="'+(a[1]-8)+'" font-size="26" font-weight="700" fill="#0f766e">A ('+ag+','+ab+')</text>';
+    h+='<line x1="'+O[0]+'" y1="'+O[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="#e8590c" stroke-width="5" marker-end="url(#cB)"/><text x="'+(b[0]+8)+'" y="'+(b[1]-8)+'" font-size="26" font-weight="700" fill="#e8590c">B ('+bg+','+bb+')</text>';
+    h+='<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="#6b7a99" stroke-width="2" stroke-dasharray="6 5"/>';
+    svg=U.q('#cd-s',root); svg.innerHTML=h;
+    U.q('#cd-c',root).textContent=cos.toFixed(2); U.q('#cd-e',root).textContent=ed.toFixed(2);
+  }
+  let svg; ids.forEach(i=>i.oninput=draw); draw();
+};
+
+// ================= sparse matrix picture =================
+SIMS.sparseViz=function(sl){
+  const D=window.S5; const root=U.q('.sim',sl); const S=D.sub;
+  root.innerHTML='<div class="small">Real data: the first 30 reviews (rows) and the 28 most common content words (columns) of the count matrix. Darker = more occurrences.</div><svg id="sv-s" viewBox="0 0 860 400" style="width:100%;height:600px;background:#fff;border-radius:12px"></svg><div class="row"><div class="stat" style="flex:1"><b>'+D.bow.shape[0]+' &times; '+D.bow.shape[1].toLocaleString()+'</b>shape of the whole matrix</div><div class="stat" style="flex:1"><b>'+D.bow.density+'%</b>of cells are not zero</div><div class="stat" style="flex:1"><b>'+D.bow.sparse_mb+' MB vs '+D.bow.dense_mb.toLocaleString()+' MB</b>sparse vs dense storage</div></div>';
+  let h=''; const cw=28, ch=11.5, x0=70, y0=96;
+  S.words.forEach((w,j)=>{h+='<text transform="translate('+(x0+j*cw+14)+','+(y0-6)+') rotate(-60)" font-size="14">'+U.esc(w)+'</text>';});
+  S.rows.forEach((r,i)=>{ h+='<text x="'+(x0-8)+'" y="'+(y0+i*ch+9)+'" text-anchor="end" font-size="11" fill="'+(S.labels[i]==='pos'?'#2b8a3e':'#c0392b')+'">'+S.labels[i]+' '+i+'</text>';
+    r.forEach((v,j)=>{ h+='<rect x="'+(x0+j*cw)+'" y="'+(y0+i*ch)+'" width="'+(cw-1)+'" height="'+(ch-1)+'" fill="'+(v===0?'#eef1f7':'rgba(15,118,110,'+Math.min(1,.25+v*.25)+')')+'"/>'; }); });
+  U.q('#sv-s',root).innerHTML=h;
+};
+
+// ================= n-gram features =================
+SIMS.ngramList=function(sl){
+  const D=window.S5; const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row"><span>Text:</span><input type="text" id="ng-t" value="the movie was not good at all" style="flex:1"></div><div class="row"><span>Pieces of</span><label class="chk"><input type="radio" name="ngn" value="1"> 1 word</label><label class="chk"><input type="radio" name="ngn" value="2" checked> 1 and 2 words</label><label class="chk"><input type="radio" name="ngn" value="3"> 1, 2 and 3 words</label></div><div class="card"><div class="small" id="ng-c"></div><div id="ng-o" style="margin-top:6px"></div></div><div class="small">Vocabulary size on the 2000 reviews: '+Object.entries(D.vocab).filter(e=>['default','min_df=3','bigrams','bigrams min_df=3'].includes(e[0])).map(e=>'<b>'+e[0]+'</b> '+e[1].toLocaleString()).join(' &nbsp; ')+'</div>';
+  const t=U.q('#ng-t',root);
+  function draw(){const n=+U.q('input[name=ngn]:checked',root).value; const w=(t.value.toLowerCase().match(/\b\w\w+\b/g)||[]); const f=[];
+    for(let k=1;k<=n;k++) for(let i=0;i+k<=w.length;i++) f.push(w.slice(i,i+k).join(' '));
+    U.q('#ng-c',root).textContent=f.length+' features from '+w.length+' words';
+    U.q('#ng-o',root).innerHTML=f.map(x=>U.tok(x,x.split(' ').length>1?(/\bnot\b|\bno\b/.test(x)?'x':'e'):'')).join('');}
+  t.oninput=draw; U.qa('input[name=ngn]',root).forEach(i=>i.onchange=draw); draw();
+};
+
+// ================= Naive Bayes calculator =================
+SIMS.nbCalc=function(sl){
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="cols c2" style="grid-template-columns:5fr 7fr;gap:22px"><div><div class="small">Training reviews, one per line, starting with pos: or neg:</div><textarea id="nb-d" rows="4" style="width:100%;font-size:23px">pos: great fun great acting\npos: fun story good\nneg: boring plot bad acting\nneg: bad bad story</textarea><div class="row"><span>Test:</span><input type="text" id="nb-t" value="great story bad acting" style="flex:1"></div><div class="row"><span>smoothing &alpha; =</span><input type="range" id="nb-a" min="0" max="2" step="0.5" value="1"><b id="nb-av"></b></div><div id="nb-r"></div></div><div style="overflow:auto"><div id="nb-tab"></div><div id="nb-s" style="margin-top:10px"></div></div></div>';
+  const tok=t=>(t.toLowerCase().match(/\b\w\w+\b/g)||[]);
+  function draw(){
+    const a=+U.q('#nb-a',root).value; U.q('#nb-av',root).textContent=a;
+    const L=U.q('#nb-d',root).value.split('\n').map(s=>s.trim()).filter(s=>/^(pos|neg)\s*:/.test(s)).map(s=>[s.slice(0,3),tok(s.replace(/^(pos|neg)\s*:/,''))]);
+    if(!L.length){return}
+    const V=[...new Set([].concat(...L.map(x=>x[1])))].sort();
+    const cls=['pos','neg'], C={pos:{},neg:{}}, T={pos:0,neg:0}, D={pos:0,neg:0};
+    L.forEach(([c,ts])=>{D[c]++;ts.forEach(w=>{C[c][w]=(C[c][w]||0)+1;T[c]++})});
+    const P=(w,c)=>((C[c][w]||0)+a)/(T[c]+a*V.length);
+    const test=tok(U.q('#nb-t',root).value), used=test.filter(w=>V.includes(w)), skip=test.filter(w=>!V.includes(w));
+    let h='<table class="tbl sm" style="font-size:18px"><tr><th>word</th><th>count in pos</th><th>count in neg</th><th>P(word | pos)</th><th>P(word | neg)</th></tr>';
+    V.forEach(w=>{const hl=used.includes(w)?' class="hl"':''; h+='<tr'+hl+'><td class="l"><b>'+U.esc(w)+'</b></td><td>'+(C.pos[w]||0)+'</td><td>'+(C.neg[w]||0)+'</td><td>'+((C.pos[w]||0)+a)+'/'+(T.pos+a*V.length)+' = '+P(w,'pos').toFixed(3)+'</td><td>'+((C.neg[w]||0)+a)+'/'+(T.neg+a*V.length)+' = '+P(w,'neg').toFixed(3)+'</td></tr>'});
+    h+='<tr><td class="l small" colspan="5">Totals: '+T.pos+' words in pos reviews, '+T.neg+' in neg; vocabulary '+V.length+' words. P(word | class) = (count + &alpha;) / (total + &alpha; &times; vocabulary)</td></tr></table>';
+    U.q('#nb-tab',root).innerHTML=h;
+    const N=D.pos+D.neg, sc={};
+    let s='<table class="tbl sm" style="font-size:18px"><tr><th></th><th>pos</th><th>neg</th></tr><tr><td class="l">prior P(class)</td><td>'+D.pos+'/'+N+'</td><td>'+D.neg+'/'+N+'</td></tr>';
+    cls.forEach(c=>sc[c]=Math.log(D[c]/N));
+    used.forEach(w=>{s+='<tr><td class="l">&times; P('+U.esc(w)+' | class)</td>'+cls.map(c=>{const p=P(w,c);sc[c]+=Math.log(p);return '<td'+(p===0?' style="color:var(--red);font-weight:700"':'')+'>'+p.toFixed(3)+'</td>'}).join('')+'</tr>'});
+    const raw=cls.map(c=>Math.exp(sc[c]));
+    s+='<tr class="hl"><td class="l"><b>product</b></td>'+raw.map(v=>'<td><b>'+(v===0?'0':v.toExponential(2))+'</b></td>').join('')+'</tr></table>';
+    U.q('#nb-s',root).innerHTML=s;
+    const tot=raw[0]+raw[1]; let r;
+    if(tot===0) r='<div class="breaks" style="margin-top:10px"><p style="margin:0"><b>Both products are 0.</b> A word never seen in a class makes that class impossible. Raise &alpha;.</p></div>';
+    else{const pp=raw[0]/tot; r='<div class="card" style="margin-top:10px"><p style="margin:0;font-size:28px">P(pos | review) = <b>'+pp.toFixed(3)+'</b> &nbsp; P(neg | review) = <b>'+(1-pp).toFixed(3)+'</b><br>Prediction: <span class="pill '+(pp>=0.5?'g':'r')+'">'+(pp>=0.5?'pos':'neg')+'</span>'+(skip.length?'<br><span class="small">Ignored (not in the training vocabulary): '+skip.map(U.esc).join(', ')+'</span>':'')+'</p></div>';}
+    U.q('#nb-r',root).innerHTML=r;
+  }
+  U.q('#nb-d',root).oninput=draw; U.q('#nb-t',root).oninput=draw; U.q('#nb-a',root).oninput=draw; draw();
+};
+
+// ================= sigmoid =================
+SIMS.sigmoidDemo=function(sl){
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row"><span>score z =</span><input type="range" id="sg-z" min="-8" max="8" step="0.5" value="1.5" style="width:600px"><b id="sg-v"></b></div><svg id="sg-s" viewBox="0 0 900 360" style="width:100%;height:420px"></svg>';
+  function draw(){
+    const z=+U.q('#sg-z',root).value, p=1/(1+Math.exp(-z)); U.q('#sg-v',root).textContent='z = '+z+'  ->  probability '+p.toFixed(3);
+    const X=v=>450+v*50, Y=v=>320-v*280; let path='';
+    for(let v=-8;v<=8.01;v+=0.1) path+=(path?'L':'M')+X(v).toFixed(1)+','+Y(1/(1+Math.exp(-v))).toFixed(1);
+    let h='<line x1="50" y1="320" x2="850" y2="320" stroke="#8aa0c8" stroke-width="2"/><line x1="450" y1="20" x2="450" y2="330" stroke="#8aa0c8" stroke-width="2"/>';
+    h+='<line x1="50" y1="'+Y(0.5)+'" x2="850" y2="'+Y(0.5)+'" stroke="#c99700" stroke-dasharray="6 6" stroke-width="2"/><text x="60" y="'+(Y(0.5)-8)+'" font-size="22" fill="#c99700">0.5: the decision line</text>';
+    h+='<text x="60" y="'+(Y(1)+24)+'" font-size="22">1.0</text><text x="60" y="314" font-size="22">0.0</text><text x="830" y="350" font-size="22" text-anchor="end">score z</text>';
+    h+='<path d="'+path+'" fill="none" stroke="#0f766e" stroke-width="5"/><circle cx="'+X(z)+'" cy="'+Y(p)+'" r="12" fill="#e8590c"/><line x1="'+X(z)+'" y1="320" x2="'+X(z)+'" y2="'+Y(p)+'" stroke="#e8590c" stroke-dasharray="4 4"/>';
+    U.q('#sg-s',root).innerHTML=h;
+  }
+  U.q('#sg-z',root).oninput=draw; draw();
+};
+
+// ================= logistic regression trainer on 2 real features =================
+SIMS.lrTrain2D=function(sl){
+  const D=window.D2S1, root=U.q('.sim',sl), pts=D.pts;
+  root.innerHTML='<div class="cols c2" style="grid-template-columns:7fr 4fr;gap:20px"><svg id="lt-s" viewBox="0 0 760 520" style="width:100%;height:600px;background:var(--panel);border-radius:12px"></svg><div><div class="small">x = count of <b>'+D.lex.pos.join(', ')+'</b><br>y = count of <b>'+D.lex.neg.join(', ')+'</b><br>Each dot is one of the 2000 reviews (green pos, red neg).</div><div class="row"><span>w<sub>pos</sub></span><input type="range" id="lt-w1" min="-3" max="3" step="0.05" value="0"><b id="lt-w1v"></b></div><div class="row"><span>w<sub>neg</sub></span><input type="range" id="lt-w2" min="-3" max="3" step="0.05" value="0"><b id="lt-w2v"></b></div><div class="row"><span>b</span><input type="range" id="lt-b" min="-3" max="3" step="0.05" value="0"><b id="lt-bv"></b></div><div class="row"><button id="lt-1">1 learning step</button><button id="lt-50">50 steps</button><button id="lt-r" class="alt">reset</button></div><div class="stat"><b id="lt-acc"></b> accuracy</div><br><div class="stat"><b id="lt-loss"></b> average log loss (lower is better)</div><div class="small" id="lt-n" style="margin-top:8px"></div></div></div>';
+  const w=[0,0,0]; let steps=0; const ids=['lt-w1','lt-w2','lt-b'].map(i=>U.q('#'+i,root));
+  const MX=14, MY=10, X=v=>60+Math.min(v,MX)/MX*670, Y=v=>480-Math.min(v,MY)/MY*450;
+  // jitter fixed
+  let seed=7; const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+  const J=pts.map(()=>[(rnd()-.5)*0.6,(rnd()-.5)*0.6]);
+  const sig=z=>1/(1+Math.exp(-z));
+  function stats(){let acc=0,loss=0;pts.forEach(p=>{const q=sig(w[0]*p[0]+w[1]*p[1]+w[2]);acc+=((q>=0.5)===(p[2]===1));loss+=-(p[2]?Math.log(Math.max(q,1e-12)):Math.log(Math.max(1-q,1e-12)))});return [acc/pts.length,loss/pts.length]}
+  function step(n){const lr=0.05;for(let k=0;k<n;k++){const g=[0,0,0];pts.forEach(p=>{const e=sig(w[0]*p[0]+w[1]*p[1]+w[2])-p[2];g[0]+=e*p[0];g[1]+=e*p[1];g[2]+=e});for(let j=0;j<3;j++)w[j]-=lr*g[j]/pts.length;steps++}sync();draw()}
+  function sync(){ids.forEach((e,i)=>e.value=w[i])}
+  function draw(){
+    ['lt-w1v','lt-w2v','lt-bv'].forEach((id,i)=>U.q('#'+id,root).textContent=w[i].toFixed(2));
+    let h='<line x1="60" y1="480" x2="740" y2="480" stroke="#8aa0c8" stroke-width="2"/><line x1="60" y1="480" x2="60" y2="20" stroke="#8aa0c8" stroke-width="2"/>';
+    for(let v=0;v<=MX;v+=2) h+='<text x="'+X(v)+'" y="505" font-size="18" text-anchor="middle">'+v+'</text>';
+    for(let v=0;v<=MY;v+=2) h+='<text x="48" y="'+(Y(v)+6)+'" font-size="18" text-anchor="end">'+v+'</text>';
+    pts.forEach((p,i)=>{h+='<circle cx="'+X(p[0]+J[i][0]).toFixed(1)+'" cy="'+Y(p[1]+J[i][1]).toFixed(1)+'" r="3.2" fill="'+(p[2]?'#2b8a3e':'#c0392b')+'" fill-opacity="0.45"/>'});
+    // boundary w0 x + w1 y + b = 0
+    if(Math.abs(w[1])>1e-6||Math.abs(w[0])>1e-6){
+      let seg=[];
+      if(Math.abs(w[1])>1e-6){[ -1, MX+1].forEach(x=>seg.push([x,-(w[0]*x+w[2])/w[1]]))} else {const x=-w[2]/w[0];seg=[[x,-1],[x,MY+1]]}
+      h+='<line x1="'+X(Math.max(-1,seg[0][0]))+'" y1="'+Y(seg[0][1])+'" x2="'+X(seg[1][0])+'" y2="'+Y(seg[1][1])+'" stroke="#c99700" stroke-width="5"/>';
+    }
+    h+='<text x="720" y="470" font-size="20" text-anchor="end">positive-word count</text><text x="70" y="40" font-size="20">negative-word count</text>';
+    U.q('#lt-s',root).innerHTML=h;
+    const [acc,loss]=stats(); U.q('#lt-acc',root).textContent=(acc*100).toFixed(1)+'%'; U.q('#lt-loss',root).textContent=loss.toFixed(3);
+    U.q('#lt-n',root).textContent='learning steps taken: '+steps+'. The yellow line is where the probability is exactly 0.5.';
+  }
+  ids.forEach((e,i)=>e.oninput=()=>{w[i]=+e.value;draw()});
+  U.q('#lt-1',root).onclick=()=>step(1); U.q('#lt-50',root).onclick=()=>step(50); U.q('#lt-r',root).onclick=()=>{w[0]=w[1]=w[2]=0;steps=0;sync();draw()};
+  draw();
+};
+
+// ================= why this label =================
+SIMS.whyLabel=function(sl){
+  const D=window.D2S1, root=U.q('.sim',sl); let ex=0, m=2;
+  root.innerHTML='<div class="row" id="wl-b"></div><div class="row"><button data-m="2" id="wl-lr">logistic regression weights</button><button data-m="1" id="wl-nb" class="alt">Naive Bayes log ratios</button></div><div class="cols c2" style="grid-template-columns:7fr 4fr;gap:20px"><div class="card" id="wl-t" style="font-size:22px;line-height:1.55;max-height:600px;overflow:auto"></div><div><div id="wl-p"></div><div id="wl-bars"></div></div></div>';
+  const bb=U.q('#wl-b',root);
+  D.examples.forEach((e,i)=>{const b=document.createElement('button');b.textContent='review '+(i+1)+' ('+e.label+')';b.onclick=()=>{ex=i;draw()};bb.appendChild(b)});
+  U.q('#wl-lr',root).onclick=()=>{m=2;draw()}; U.q('#wl-nb',root).onclick=()=>{m=1;draw()};
+  function draw(){
+    U.qa('button',bb).forEach((b,i)=>b.classList.toggle('alt',i!==ex)); U.q('#wl-lr',root).classList.toggle('alt',m!==2); U.q('#wl-nb',root).classList.toggle('alt',m!==1);
+    const e=D.examples[ex], C=D.contrib[e.id], mx=Math.max(...C.map(c=>Math.abs(c[m])))||1;
+    U.q('#wl-t',root).innerHTML=C.map(c=>{const v=c[m],a=Math.min(1,Math.abs(v)/mx*1.2);return '<span style="padding:1px 3px;border-radius:4px;background:'+(v>0?'rgba(43,138,62,'+a+')':'rgba(192,57,43,'+a+')')+'">'+U.esc(c[0])+'</span>'}).join(' ');
+    const agg={}; C.forEach(c=>agg[c[0]]=(agg[c[0]]||0)+c[m]);
+    const arr=Object.entries(agg).sort((a,b)=>b[1]-a[1]); const top=arr.slice(0,6), bot=arr.slice(-6).reverse();
+    const p=m===2?e.plr:e.pnb, ok=(p>=0.5)===(e.label==='pos');
+    U.q('#wl-p',root).innerHTML='<div class="stat"><b>'+p.toFixed(2)+'</b>P(pos) from this model</div><p>True label: <span class="pill '+(e.label==='pos'?'g':'r')+'">'+e.label+'</span> '+(ok?'<span class="pill t">correct</span>':'<span class="pill o">wrong</span>')+'</p>';
+    const mm=Math.max(...arr.map(a=>Math.abs(a[1])))||1;
+    const bar=(x,c)=>'<div style="display:flex;align-items:center;gap:8px;font-size:21px;margin:2px 0"><span style="width:140px;text-align:right;font-family:var(--mono)">'+U.esc(x[0])+'</span><span style="height:18px;width:'+(Math.abs(x[1])/mm*200)+'px;background:'+c+'"></span><span>'+x[1].toFixed(2)+'</span></div>';
+    U.q('#wl-bars',root).innerHTML='<div class="small"><b>Pushing towards pos</b> (summed over the review)</div>'+top.map(x=>bar(x,'#2b8a3e')).join('')+'<div class="small" style="margin-top:8px"><b>Pushing towards neg</b></div>'+bot.map(x=>bar(x,'#c0392b')).join('');
+  }
+  draw();
+};
+
+// ================= top word tables =================
+SIMS._twoCol=function(el,L,R,fmtL,fmtR,hl,hr){
+  const tab=(rows,f,h,c)=>'<div><h3 style="color:'+c+'">'+h+'</h3><table class="tbl sm" style="font-size:22px;width:100%">'+f.head+rows.map(f.row).join('')+'</table></div>';
+  el.innerHTML=tab(L,fmtL,hl,'var(--green)')+tab(R,fmtR,hr,'var(--red)');
+};
+SIMS.nbTop=function(sl){
+  const D=window.D2S1.nb_top_freq, f={head:'<tr><th>word</th><th>log ratio</th><th>in pos</th><th>in neg</th></tr>',row:r=>'<tr><td class="l"><b>'+r[0]+'</b></td><td>'+r[1].toFixed(2)+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td></tr>'};
+  SIMS._twoCol(U.q('#nbtop',sl),D.pos.slice(0,8),D.neg.slice(0,8),f,f,'Push towards pos','Push towards neg');
+};
+SIMS.lrTop=function(sl){
+  const D=window.D2S1.lr_top, f={head:'<tr><th>word</th><th>weight</th></tr>',row:r=>'<tr><td class="l"><b>'+r[0]+'</b></td><td>'+(r[1]>0?'+':'')+r[1].toFixed(2)+'</td></tr>'};
+  SIMS._twoCol(U.q('#lrtop',sl),D.pos.slice(0,10),D.neg.slice(0,10),f,f,'Largest positive weights','Largest negative weights');
+};
+
+// ================= threshold explorer =================
+SIMS.thresholdSim=function(sl){
+  const D=window.D2S2, root=U.q('.sim',sl); let model='p';
+  root.innerHTML='<div class="row"><button id="th-lr">logistic regression</button><button id="th-nb" class="alt">Naive Bayes</button><span style="margin-left:20px">threshold</span><input type="range" id="th-t" min="0.02" max="0.98" step="0.02" value="0.5" style="width:420px"><b id="th-tv"></b></div><div class="cols c2" style="grid-template-columns:6fr 5fr;gap:20px"><div><svg id="th-h" viewBox="0 0 760 330" style="width:100%;height:340px;background:var(--panel);border-radius:12px"></svg><div class="small">Each bar counts test reviews by the model\'s P(pos). Green above the line: truly pos. Red below: truly neg. Everything right of the yellow threshold is predicted pos.</div></div><div><div id="th-cm"></div><div id="th-m" style="margin-top:10px"></div><svg id="th-pr" viewBox="0 0 330 230" style="width:100%;height:230px"></svg></div></div>';
+  const y=D.test.y;
+  function metrics(p,t){let tp=0,fp=0,fn=0,tn=0;p.forEach((v,i)=>{const pr=v>=t;if(pr&&y[i])tp++;else if(pr)fp++;else if(y[i])fn++;else tn++});const P=tp+fp?tp/(tp+fp):1,R=tp/(tp+fn),F=P+R?2*P*R/(P+R):0;return{tp,fp,fn,tn,P,R,F,A:(tp+tn)/y.length}}
+  function draw(){
+    const t=+U.q('#th-t',root).value, p=D.test[model]; U.q('#th-tv',root).textContent=t.toFixed(2);
+    U.q('#th-lr',root).classList.toggle('alt',model!=='p'); U.q('#th-nb',root).classList.toggle('alt',model!=='pnb');
+    const nb=20, hp=new Array(nb).fill(0), hn=new Array(nb).fill(0); p.forEach((v,i)=>{const k=Math.min(nb-1,Math.floor(v*nb));(y[i]?hp:hn)[k]++});
+    const mx=Math.max(...hp,...hn,1), bw=680/nb, X0=40, mid=165, sc=140/mx;
+    let h='<line x1="'+X0+'" y1="'+mid+'" x2="'+(X0+680)+'" y2="'+mid+'" stroke="#8aa0c8" stroke-width="2"/>';
+    for(let k=0;k<nb;k++){h+='<rect x="'+(X0+k*bw+1)+'" y="'+(mid-hp[k]*sc)+'" width="'+(bw-2)+'" height="'+hp[k]*sc+'" fill="#2b8a3e" fill-opacity=".75"/><rect x="'+(X0+k*bw+1)+'" y="'+mid+'" width="'+(bw-2)+'" height="'+hn[k]*sc+'" fill="#c0392b" fill-opacity=".75"/>';}
+    [0,0.25,0.5,0.75,1].forEach(v=>h+='<text x="'+(X0+v*680)+'" y="325" font-size="18" text-anchor="middle">'+v+'</text>');
+    h+='<line x1="'+(X0+t*680)+'" y1="10" x2="'+(X0+t*680)+'" y2="310" stroke="#c99700" stroke-width="5"/>';
+    U.q('#th-h',root).innerHTML=h;
+    const m=metrics(p,t);
+    U.q('#th-cm',root).innerHTML='<table class="tbl" style="font-size:26px;width:100%"><tr><th></th><th>predicted pos</th><th>predicted neg</th></tr><tr><th>truly pos</th><td style="background:rgba(43,138,62,.25)"><b>'+m.tp+'</b> TP</td><td>'+m.fn+' FN</td></tr><tr><th>truly neg</th><td>'+m.fp+' FP</td><td style="background:rgba(43,138,62,.25)"><b>'+m.tn+'</b> TN</td></tr></table>';
+    U.q('#th-m',root).innerHTML='<div class="row"><div class="stat"><b>'+(m.A*100).toFixed(2)+'%</b> accuracy</div><div class="stat"><b>'+m.P.toFixed(2)+'</b> precision</div><div class="stat"><b>'+m.R.toFixed(2)+'</b> recall</div><div class="stat"><b>'+m.F.toFixed(2)+'</b> F1</div></div>';
+    // PR curve
+    let pts=[];for(let k=0.02;k<=0.981;k+=0.02){const q=metrics(p,k);pts.push([q.R,q.P])}
+    const PX=v=>40+v*270, PY=v=>200-v*180;
+    let g='<line x1="40" y1="200" x2="320" y2="200" stroke="#8aa0c8"/><line x1="40" y1="200" x2="40" y2="15" stroke="#8aa0c8"/><text x="315" y="222" font-size="16" text-anchor="end">recall</text><text x="45" y="16" font-size="16">precision</text>';
+    g+='<polyline fill="none" stroke="#0f766e" stroke-width="3" points="'+pts.map(q=>PX(q[0]).toFixed(1)+','+PY(q[1]).toFixed(1)).join(' ')+'"/><circle cx="'+PX(m.R)+'" cy="'+PY(m.P)+'" r="7" fill="#e8590c"/>';
+    U.q('#th-pr',root).innerHTML=g;
+  }
+  U.q('#th-t',root).oninput=draw; U.q('#th-lr',root).onclick=()=>{model='p';draw()}; U.q('#th-nb',root).onclick=()=>{model='pnb';draw()}; draw();
+};
+
+// ================= split variance =================
+SIMS.splitDots=function(sl){
+  const D=window.D2S2, root=U.q('.sim',sl); let n=1;
+  root.innerHTML='<div class="row"><button id="sd-1">draw another random split</button><button id="sd-all" class="alt">show all 20</button><button id="sd-r" class="alt">reset</button></div><svg id="sd-s" viewBox="0 0 900 220" style="width:100%;height:260px;background:var(--panel);border-radius:12px"></svg><div class="row"><div class="stat"><b id="sd-n"></b>splits drawn</div><div class="stat"><b id="sd-r2"></b>lowest to highest accuracy</div><div class="stat"><b id="sd-m"></b>average</div></div>';
+  const A=D.split_accs, lo=78, hi=92, X=v=>40+(v-lo)/(hi-lo)*820;
+  function draw(){
+    const s=A.slice(0,n); const cnt={}; let h='<line x1="40" y1="170" x2="860" y2="170" stroke="#8aa0c8" stroke-width="2"/>';
+    for(let v=lo;v<=hi;v+=2) h+='<text x="'+X(v)+'" y="200" font-size="20" text-anchor="middle">'+v+'%</text>';
+    s.forEach((v,i)=>{cnt[v]=(cnt[v]||0)+1; h+='<circle cx="'+X(v)+'" cy="'+(160-(cnt[v]-1)*22)+'" r="10" fill="'+(i===n-1?'#e8590c':'#0f766e')+'"/>'});
+    U.q('#sd-s',root).innerHTML=h; U.q('#sd-n',root).textContent=n;
+    U.q('#sd-r2',root).textContent=Math.min(...s).toFixed(1)+'% to '+Math.max(...s).toFixed(1)+'%';
+    U.q('#sd-m',root).textContent=(s.reduce((a,b)=>a+b,0)/s.length).toFixed(1)+'%';
+  }
+  U.q('#sd-1',root).onclick=()=>{if(n<A.length)n++;draw()}; U.q('#sd-all',root).onclick=()=>{n=A.length;draw()}; U.q('#sd-r',root).onclick=()=>{n=1;draw()}; draw();
+};
+
+// ================= k-fold picture =================
+SIMS.kfoldViz=function(sl){
+  const D=window.D2S2, root=U.q('.sim',sl); let k=0;
+  root.innerHTML='<div class="row"><button id="kf-n">next fold</button><button id="kf-r" class="alt">reset</button></div><div id="kf-g"></div><div class="row" id="kf-s"></div>';
+  function draw(){
+    let h='';
+    for(let r=0;r<5;r++){ if(r>=k) break; h+='<div style="display:flex;align-items:center;gap:6px;margin:6px 0"><span style="width:110px;font-size:24px">round '+(r+1)+'</span>';
+      for(let c=0;c<5;c++) h+='<span style="flex:1;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;background:'+(c===r?'#e8590c':'#0f766e')+'">'+(c===r?'test (400)':'train')+'</span>';
+      h+='<b style="width:110px;text-align:right;font-size:26px">'+D.folds[r].toFixed(1)+'%</b></div>'; }
+    U.q('#kf-g',root).innerHTML=h||'<p class="small">Press "next fold". The 2000 reviews are cut into 5 parts of 400.</p>';
+    if(k===5){const m=D.folds.reduce((a,b)=>a+b,0)/5, sd=Math.sqrt(D.folds.reduce((a,b)=>a+(b-m)**2,0)/5);U.q('#kf-s',root).innerHTML='<div class="stat"><b>'+m.toFixed(1)+'% &plusmn; '+sd.toFixed(1)+'</b>mean &plusmn; spread over the 5 test parts</div>'}else U.q('#kf-s',root).innerHTML='';
+  }
+  U.q('#kf-n',root).onclick=()=>{if(k<5)k++;draw()}; U.q('#kf-r',root).onclick=()=>{k=0;draw()}; draw();
+};
+
+// ================= bigram calculator (toy corpus) =================
+SIMS.bigramCalc=function(sl){
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="cols c2" style="grid-template-columns:5fr 7fr;gap:22px"><div><div class="small">Training sentences, one per line. &lt;s&gt; and &lt;/s&gt; are added for you.</div><textarea id="bg-d" rows="4" style="width:100%;font-size:24px">i liked the movie\ni liked the plot\nthe movie was long</textarea><div class="row"><span>Sentence:</span><input type="text" id="bg-t" value="i liked the plot" style="flex:1"></div><div class="row"><span>add-k, k =</span><input type="range" id="bg-k" min="0" max="1" step="0.05" value="0"><b id="bg-kv"></b></div><div id="bg-r"></div></div><div style="overflow:auto"><div id="bg-s"></div></div></div>';
+  const tok=t=>t.toLowerCase().split(/\s+/).filter(Boolean);
+  function draw(){
+    const k=+U.q('#bg-k',root).value; U.q('#bg-kv',root).textContent=k.toFixed(2);
+    const S=U.q('#bg-d',root).value.split('\n').map(tok).filter(s=>s.length).map(s=>['<s>'].concat(s,['</s>']));
+    const B={},C={},Vs=new Set();
+    S.forEach(s=>{for(let i=1;i<s.length;i++){const key=s[i-1]+' '+s[i];B[key]=(B[key]||0)+1;C[s[i-1]]=(C[s[i-1]]||0)+1;Vs.add(s[i])}});
+    const V=Vs.size, t=['<s>'].concat(tok(U.q('#bg-t',root).value),['</s>']);
+    let h='<table class="tbl sm" style="font-size:23px"><tr><th>step</th><th>bigram</th><th>count</th><th>count of first word</th><th>P(next | previous)</th></tr>', lp=0, zero=false;
+    for(let i=1;i<t.length;i++){const c=B[t[i-1]+' '+t[i]]||0, cc=C[t[i-1]]||0, den=cc+k*V, p=den?(c+k)/den:0; if(p===0)zero=true; else lp+=Math.log(p);
+      h+='<tr'+(p===0?' style="color:var(--red);font-weight:700"':'')+'><td>'+i+'</td><td class="l">P('+U.esc(t[i])+' | '+U.esc(t[i-1])+')</td><td>'+c+'</td><td>'+cc+'</td><td>'+(den?'('+c+(k?'+'+k:'')+')/('+cc+(k?'+'+k+'&times;'+V:'')+') = '+p.toFixed(3):'unseen word')+'</td></tr>'}
+    h+='</table>'; U.q('#bg-s',root).innerHTML=h;
+    const n=t.length-1, P=zero?0:Math.exp(lp), pp=zero?Infinity:Math.exp(-lp/n);
+    U.q('#bg-r',root).innerHTML='<div class="card" style="margin-top:8px"><p style="margin:0;font-size:27px">P(sentence) = <b>'+(zero?'0':P<1e-3?P.toExponential(2):P.toFixed(4))+'</b><br>perplexity = <b>'+(zero?'infinite':pp.toFixed(2))+'</b> over '+n+' predictions<br><span class="small">Vocabulary of possible next words: '+V+'</span></p></div>';
+  }
+  ['#bg-d','#bg-t','#bg-k'].forEach(s=>U.q(s,root).oninput=draw); draw();
+};
+
+// ================= next word explorer (real bigrams) =================
+SIMS.nextWord=function(sl){
+  const D=window.D2S3, root=U.q('.sim',sl); let seq=['<s>'];
+  root.innerHTML='<div class="row"><span>Start from:</span><input type="text" id="nw-w" value="the" style="width:220px"><button id="nw-go">use this word</button><button id="nw-s" class="alt">start of sentence</button><button id="nw-r" class="alt">random next (from top 12)</button></div><div class="card" id="nw-seq" style="font-size:30px;min-height:60px"></div><div class="small" id="nw-c"></div><div id="nw-b"></div>';
+  let seed=11; const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+  function draw(){
+    const w=seq[seq.length-1], L=D.next[w];
+    U.q('#nw-seq',root).innerHTML=seq.map(x=>'<span class="tok'+(x===w?' e':'')+'">'+U.esc(x)+'</span>').join(' ');
+    if(!L){U.q('#nw-b',root).innerHTML='<p class="muted">"'+U.esc(w)+'" is not among the 2,500 most frequent words. Start again.</p>';U.q('#nw-c',root).textContent='';return}
+    const tot=D.ctxcount[w]; U.q('#nw-c',root).innerHTML='"'+U.esc(w)+'" is followed by something '+tot.toLocaleString()+' times in the training reviews. Click a word to add it.';
+    const mx=L[0][1]/tot;
+    U.q('#nw-b',root).innerHTML=L.map(([x,c])=>'<div class="nwrow" data-w="'+U.esc(x)+'" style="display:flex;align-items:center;gap:10px;margin:3px 0;cursor:pointer;font-size:24px"><span style="width:170px;text-align:right;font-family:var(--mono)">'+U.esc(x)+'</span><span style="height:24px;width:'+(c/tot/mx*620)+'px;background:var(--teal);border-radius:4px"></span><span>'+(c/tot).toFixed(3)+' ('+c+')</span></div>').join('');
+    U.qa('.nwrow',root).forEach(r=>r.onclick=()=>{seq.push(r.dataset.w);if(r.dataset.w==='</s>')seq.push('<s>');draw()});
+  }
+  U.q('#nw-go',root).onclick=()=>{seq=[U.q('#nw-w',root).value.trim().toLowerCase()];draw()};
+  U.q('#nw-s',root).onclick=()=>{seq=['<s>'];draw()};
+  U.q('#nw-r',root).onclick=()=>{const w=seq[seq.length-1],L=D.next[w];if(!L)return;const tot=L.reduce((a,b)=>a+b[1],0);let x=rnd()*tot;for(const [y,c] of L){x-=c;if(x<=0){seq.push(y);if(y==='</s>')seq.push('<s>');break}}draw()};
+  draw();
+};
+
+// ================= generated text samples =================
+SIMS.genSamples=function(sl){
+  const D=window.D2S3, root=U.q('.sim',sl); let o='1';
+  root.innerHTML='<div class="row"><button data-o="1">unigram (no context)</button><button data-o="2">bigram (1 word of context)</button><button data-o="3">trigram (2 words of context)</button></div><div id="gs-o"></div>';
+  function draw(){U.qa('button',root).forEach(b=>b.classList.toggle('alt',b.dataset.o!==o));U.q('#gs-o',root).innerHTML=D.gen[o].map(s=>'<div class="card" style="margin:8px 0;font-size:25px;font-family:var(--mono)">'+U.esc(s)+'</div>').join('')}
+  U.qa('button',root).forEach(b=>b.onclick=()=>{o=b.dataset.o;draw()}); draw();
+};
+
+// ================= per-word probability bars and perplexity =================
+SIMS.pplBars=function(sl){
+  const D=window.D2S3, root=U.q('.sim',sl); let e=0;
+  root.innerHTML='<div class="row" id="pb-b"></div><div id="pb-o"></div>';
+  D.sent_ex.forEach((x,i)=>{const b=document.createElement('button');b.textContent='test sentence '+(i+1);b.onclick=()=>{e=i;draw()};U.q('#pb-b',root).appendChild(b)});
+  function draw(){
+    U.qa('#pb-b button',root).forEach((b,i)=>b.classList.toggle('alt',i!==e));
+    const R=D.sent_ex[e].rows, names=['unigram','bigram','trigram'], col=['#8aa0c8','#0f766e','#e8590c'];
+    const L=v=>Math.max(0,(Math.log10(v)+6)/6);  // 1e-6..1 -> 0..1
+    let h='<div class="card" style="font-size:26px;margin:8px 0">'+U.esc(D.sent_ex[e].text)+'</div><table class="tbl sm" style="font-size:21px;width:100%"><tr><th style="width:12%">next word</th>'+names.map((n,j)=>'<th style="color:'+col[j]+'">P under '+n+'</th>').join('')+'</tr>';
+    R.forEach(r=>{h+='<tr><td class="l"><b>'+U.esc(r[0])+'</b></td>'+[1,2,3].map(j=>'<td class="l"><span style="display:inline-block;height:16px;width:'+(L(r[j])*170)+'px;background:'+col[j-1]+';vertical-align:middle"></span> '+(r[j]<0.001?r[j].toExponential(1):r[j].toFixed(3))+'</td>').join('')+'</tr>'});
+    const pp=[1,2,3].map(j=>Math.exp(-R.reduce((a,r)=>a+Math.log(r[j]),0)/R.length));
+    h+='<tr class="hl"><td class="l"><b>perplexity</b></td>'+pp.map(v=>'<td><b>'+v.toFixed(1)+'</b></td>').join('')+'</tr></table><div class="small">Bars on a log scale. Smoothing: add-k with k = 0.01. Perplexity = 1 / (geometric mean of the probabilities).</div>';
+    U.q('#pb-o',root).innerHTML=h;
+  }
+  draw();
+};
+
+// ================= toy Viterbi, step by step =================
+SIMS.viterbiToy=function(sl){
+  const root=U.q('.sim',sl);
+  const T=['PRON','VERB','NOUN'], W=['they','can','fish'];
+  const st={PRON:.6,VERB:.1,NOUN:.3};
+  const tr={PRON:{PRON:.1,VERB:.8,NOUN:.1},VERB:{PRON:.2,VERB:.3,NOUN:.5},NOUN:{PRON:.2,VERB:.5,NOUN:.3}};
+  const em={PRON:{they:.3,can:0,fish:0},VERB:{they:0,can:.2,fish:.1},NOUN:{they:0,can:.05,fish:.2}};
+  // full Viterbi
+  const V=[],B=[];
+  W.forEach((w,i)=>{V.push({});B.push({});T.forEach(t=>{ if(i===0){V[0][t]=st[t]*em[t][w];B[0][t]=null;} else {let best=null,bv=-1;T.forEach(p=>{const v=V[i-1][p]*tr[p][t];if(v>bv){bv=v;best=p}});V[i][t]=bv*em[t][w];B[i][t]=best;} })});
+  const order=[];W.forEach((w,i)=>T.forEach(t=>order.push([i,t])));
+  let k=0, mode='trellis';
+  root.innerHTML='<div class="row"><button id="vt-n">fill next cell</button><button id="vt-a" class="alt">fill all</button><button id="vt-b" class="alt">trace back</button><button id="vt-r" class="alt">reset</button><span style="margin-left:24px"></span><button id="vt-m1">trellis</button><button id="vt-m2" class="alt">all 27 paths</button></div><div id="vt-o"></div>';
+  const f=v=>v===0?'0':v.toPrecision(3);
+  let back=false;
+  function trellis(){
+    let best=null; if(back){let bv=-1;T.forEach(t=>{if(V[2][t]>bv){bv=V[2][t];best=t}})}
+    const path=[]; if(best){let t=best;for(let i=2;i>=0;i--){path[i]=t;t=B[i][t]}}
+    const cx=i=>230+i*420, cy=j=>95+j*125;
+    let s='<svg viewBox="0 0 1300 440" style="width:100%;height:440px;background:var(--panel);border-radius:12px">';
+    W.forEach((w,i)=>s+='<text x="'+cx(i)+'" y="30" font-size="30" font-weight="700" text-anchor="middle">"'+w+'"</text>');
+    T.forEach((t,j)=>s+='<text x="20" y="'+(cy(j)+10)+'" font-size="26" font-weight="700">'+t+'</text>');
+    // backpointer arrows for filled cells
+    order.slice(0,k).forEach(([i,t])=>{if(i>0&&V[i][t]>0){const p=B[i][t];const on=path[i]===t&&path[i-1]===p;s+='<line x1="'+(cx(i-1)+90)+'" y1="'+cy(T.indexOf(p))+'" x2="'+(cx(i)-90)+'" y2="'+cy(T.indexOf(t))+'" stroke="'+(on?'#e8590c':'#8aa0c8')+'" stroke-width="'+(on?7:3)+'"/>'}});
+    order.forEach(([i,t],n)=>{const filled=n<k,cur=n===k-1,onp=path[i]===t;s+='<rect x="'+(cx(i)-90)+'" y="'+(cy(T.indexOf(t))-38)+'" width="180" height="76" rx="12" fill="'+(onp?'#ffe3cc':cur?'#fff3c4':'#fff')+'" stroke="'+(onp?'#e8590c':'#14213d')+'" stroke-width="'+(onp||cur?4:2)+'"/>';
+      if(filled) s+='<text x="'+cx(i)+'" y="'+(cy(T.indexOf(t))+10)+'" font-size="26" text-anchor="middle" font-family="monospace">'+f(V[i][t])+'</text>';});
+    s+='</svg>';
+    let ex='';
+    if(k>0){const [i,t]=order[k-1], w=W[i];
+      if(i===0) ex='Cell ('+t+', "'+w+'") = P(start &rarr; '+t+') &times; P("'+w+'" | '+t+') = '+st[t]+' &times; '+em[t][w]+' = <b>'+f(V[0][t])+'</b>';
+      else ex='Cell ('+t+', "'+w+'") = <b>best</b> over previous tags of [previous cell &times; P('+t+' | previous)], then &times; P("'+w+'" | '+t+')<br>'+T.map(p=>p+': '+f(V[i-1][p])+' &times; '+tr[p][t]+' = '+f(V[i-1][p]*tr[p][t])).join(' &nbsp;|&nbsp; ')+'<br>best = '+B[i][t]+', then &times; '+em[t][w]+' = <b>'+f(V[i][t])+'</b>';}
+    if(back) ex='<b>Trace back:</b> best last cell is '+best+' ('+f(V[2][best])+'). Follow the arrows back: <b>they/'+path[0]+' can/'+path[1]+' fish/'+path[2]+'</b>.';
+    return s+'<div class="card" style="font-size:24px;margin-top:10px;min-height:96px">'+(ex||'Each cell will hold the probability of the <b>best</b> tag sequence that ends in this tag at this word.')+'</div>';
+  }
+  function allPaths(){
+    const rows=[];T.forEach(a=>T.forEach(b=>T.forEach(c=>{const p=st[a]*em[a].they*tr[a][b]*em[b].can*tr[b][c]*em[c].fish;rows.push([a,b,c,p])})));
+    rows.sort((x,y)=>y[3]-x[3]);
+    return '<div class="small">Brute force: every one of the 3 &times; 3 &times; 3 = 27 tag sequences, scored. Most are 0 because an emission is 0.</div><table class="tbl sm" style="font-size:22px;width:70%"><tr><th>they</th><th>can</th><th>fish</th><th>probability</th></tr>'+rows.slice(0,8).map((r,i)=>'<tr'+(i===0?' class="hl"':'')+'><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+f(r[3])+'</td></tr>').join('')+'<tr><td colspan="4" class="small">... and '+rows.filter(r=>r[3]===0).length+' more with probability 0</td></tr></table>';
+  }
+  function draw(){U.q('#vt-m1',root).classList.toggle('alt',mode!=='trellis');U.q('#vt-m2',root).classList.toggle('alt',mode==='trellis');U.q('#vt-o',root).innerHTML=mode==='trellis'?trellis():allPaths()}
+  U.q('#vt-n',root).onclick=()=>{if(k<9)k++;back=false;mode='trellis';draw()};
+  U.q('#vt-a',root).onclick=()=>{k=9;back=false;mode='trellis';draw()};
+  U.q('#vt-b',root).onclick=()=>{k=9;back=true;mode='trellis';draw()};
+  U.q('#vt-r',root).onclick=()=>{k=0;back=false;draw()};
+  U.q('#vt-m1',root).onclick=()=>{mode='trellis';draw()}; U.q('#vt-m2',root).onclick=()=>{mode='paths';draw()};
+  draw();
+};
+
+// ================= real HMM tagger (Penn Treebank sample, universal tags) =================
+SIMS.hmmTag=function(words){
+  const D=window.D2S4, T=D.tags, K=D.K, nT=T.length;
+  const shape=w=>{if(/\d/.test(w))return'digit';if(/^[A-Z]/.test(w))return'Capital';for(const s of['ing','ed','ly','s'])if(w.endsWith(s))return'-'+s;if(w.includes('-'))return'hyphen';return'other'};
+  const tc=D.tagcount;
+  const pe=(t,w)=>{const e=D.emit[w];if(e!==undefined)return (e[t]||0)/tc[t];return ((D.hapc[t+'|'+shape(w)]||0)+0.1)/(tc[t]+0.1*nT)};
+  const pt=(a,b)=>D.trans[a][b];
+  const L=x=>x>0?Math.log(x):-1e9;
+  const V=[],B=[];
+  words.forEach((w,i)=>{V.push({});B.push({});T.forEach(t=>{const le=L(pe(t,w));if(i===0){V[0][t]=Math.log(pt('<s>',t))+le;B[0][t]=null}else{let best=null,bv=-Infinity;T.forEach(p=>{const v=V[i-1][p]+Math.log(pt(p,t));if(v>bv){bv=v;best=p}});V[i][t]=bv+le;B[i][t]=best}})});
+  let last=null,bv=-Infinity;T.forEach(t=>{const v=V[words.length-1][t]+Math.log(pt(t,'</s>'));if(v>bv){bv=v;last=t}});
+  const path=[last];for(let i=words.length-1;i>0;i--)path.push(B[i][path[path.length-1]]);
+  return {tags:path.reverse(),known:words.map(w=>D.emit[w]!==undefined),shape:words.map(shape)};
+};
+SIMS.hmmTagger=function(sl){
+  const root=U.q('.sim',sl);
+  root.innerHTML='<div class="row"><input type="text" id="ht-t" value="The company said its profit rose 5 % in the quarter ." style="flex:1"><button id="ht-go">tag</button></div><div class="row" id="ht-ex"></div><div id="ht-o" style="margin-top:10px"></div><div class="small" style="margin-top:10px">Trained on 3000 Wall Street Journal sentences (Penn Treebank sample), 11 universal tags. Words not seen in training are tagged from their shape (capital letter, digits, -ing, -ed, -ly, -s, hyphen). Separate punctuation with spaces.</div>';
+  const exs=["They can fish .","I saw her duck .","Time flies like an arrow .","The old man the boat .","Investors bought shares of Microsoft on Monday ."];
+  exs.forEach(e=>{const b=document.createElement('button');b.className='alt';b.style.fontSize='21px';b.textContent=e;b.onclick=()=>{U.q('#ht-t',root).value=e;go()};U.q('#ht-ex',root).appendChild(b)});
+  const col={NOUN:'#0f766e',VERB:'#e8590c',ADJ:'#3b6fd4',ADV:'#7c3aed',DET:'#6b7a99',ADP:'#a16207',PRON:'#be185d',NUM:'#15803d',CONJ:'#64748b',PRT:'#9333ea','.':'#94a3b8'};
+  function go(){const w=U.q('#ht-t',root).value.trim().split(/\s+/).filter(Boolean);if(!w.length)return;const r=SIMS.hmmTag(w);
+    U.q('#ht-o',root).innerHTML=w.map((x,i)=>'<span style="display:inline-block;text-align:center;margin:6px 10px 6px 0">'+U.tok(x)+'<br><span class="pill" style="font-size:22px;margin-top:6px;background:'+(col[r.tags[i]]||'#14213d')+'">'+r.tags[i]+'</span><br><span class="small" style="font-size:17px">'+(r.known[i]?'known':'unknown, '+r.shape[i])+'</span></span>').join('')}
+  U.q('#ht-go',root).onclick=go; U.q('#ht-t',root).onkeydown=e=>{if(e.key==='Enter')go()}; go();
+};
+
+// ================= transition heat map =================
+SIMS.transHeat=function(sl){
+  const D=window.D2S4, root=U.q('.sim',sl), rows=['<s>'].concat(D.tags), cols=D.tags.concat(['</s>']);
+  let h='<div class="small">Row = previous tag, column = next tag. Each row sums to 1. Darker = more likely. From 3000 training sentences.</div><table class="tbl sm" style="font-size:23px"><tr><th>prev \\ next</th>'+cols.map(c=>'<th>'+U.esc(c)+'</th>').join('')+'</tr>';
+  rows.forEach(r=>{h+='<tr><th>'+U.esc(r)+'</th>'+cols.map(c=>{const v=D.trans[r][c];return '<td style="background:rgba(15,118,110,'+Math.min(1,v*1.6).toFixed(2)+');color:'+(v>0.35?'#fff':'inherit')+'">'+(v>=0.005?v.toFixed(2):'')+'</td>'}).join('')+'</tr>'});
+  root.innerHTML=h+'</table>';
+};
+
+// ================= NER: gold vs spaCy, BIO, cased vs lowercase =================
+SIMS.nerCompare=function(sl){
+  const D=window.D2S5, root=U.q('.sim',sl); let s=0, mode='eval_cased';
+  root.innerHTML='<div class="row"><button id="nc-c">original text</button><button id="nc-l" class="alt">all lowercase</button><span style="margin-left:16px">sentence</span><button id="nc-p" class="alt">&larr;</button><b id="nc-n"></b><button id="nc-x" class="alt">&rarr;</button></div><div id="nc-o"></div><div class="row" id="nc-m"></div>';
+  const col={PERSON:'#be185d',ORG:'#3b6fd4',GPE:'#15803d',DATE:'#a16207',WORK_OF_ART:'#7c3aed',MONEY:'#0f766e',CARDINAL:'#64748b',ORDINAL:'#64748b',LOC:'#15803d',NORP:'#e8590c'};
+  function mark(text,S){let h='',p=0;S.slice().sort((a,b)=>a[0]-b[0]).forEach(([a,b,l])=>{h+=U.esc(text.slice(p,a))+'<span style="background:'+(col[l]||'#14213d')+';color:#fff;border-radius:6px;padding:1px 6px">'+U.esc(text.slice(a,b))+' <small style="font-size:16px;opacity:.85">'+l+'</small></span>';p=b});return h+U.esc(text.slice(p))}
+  function draw(){
+    const E=D[mode], r=E.rows[s]; U.q('#nc-n',root).textContent=(s+1)+' / '+E.rows.length;
+    U.q('#nc-c',root).classList.toggle('alt',mode!=='eval_cased'); U.q('#nc-l',root).classList.toggle('alt',mode!=='eval_lower');
+    const key=x=>x.join('|'), G=new Set(r.gold.map(key)), P=new Set(r.pred.map(key));
+    let h='<div class="card" style="margin:8px 0"><div class="small"><b>Gold</b> (a person labelled it)</div><p style="font-size:28px;margin:4px 0 10px">'+mark(r.text,r.gold)+'</p><div class="small"><b>spaCy</b> (en_core_web_sm)</div><p style="font-size:28px;margin:4px 0">'+mark(r.text,r.pred)+'</p></div>';
+    h+='<table class="tbl sm" style="font-size:19px"><tr><th>token</th>'+r.tokens.map(t=>'<td>'+U.esc(t[0])+'</td>').join('')+'</tr><tr><th>gold BIO</th>'+r.gbio.map(x=>'<td>'+x+'</td>').join('')+'</tr><tr><th>spaCy BIO</th>'+r.pbio.map((x,i)=>'<td style="'+(x!==r.gbio[i]?'background:rgba(192,57,43,.25);font-weight:700':'')+'">'+x+'</td>').join('')+'</tr></table>';
+    const ok=r.pred.filter(p=>G.has(key(p))).length;
+    h+='<div class="small" style="margin-top:6px">This sentence: '+ok+' of '+r.gold.length+' gold entities found exactly, '+(r.pred.length-ok)+' predicted entities wrong.</div>';
+    U.q('#nc-o',root).innerHTML=h;
+    U.q('#nc-m',root).innerHTML='<div class="stat"><b>'+E.P.toFixed(2)+'</b>precision</div><div class="stat"><b>'+E.R.toFixed(2)+'</b>recall</div><div class="stat"><b>'+E.F.toFixed(2)+'</b>entity F1</div><div class="stat"><b>'+E.tokacc+'%</b>token BIO accuracy</div><span class="small">all 15 sentences, exact span and type</span>';
+  }
+  U.q('#nc-c',root).onclick=()=>{mode='eval_cased';draw()}; U.q('#nc-l',root).onclick=()=>{mode='eval_lower';draw()};
+  U.q('#nc-p',root).onclick=()=>{s=(s+14)%15;draw()}; U.q('#nc-x',root).onclick=()=>{s=(s+1)%15;draw()}; draw();
+};
+
+// ================= dependency arcs =================
+SIMS.depArcs=function(sl){
+  const D=window.D2S5, root=U.q('.sim',sl); let s=0, sel=-1;
+  root.innerHTML='<div class="row" id="da-b"></div><svg id="da-s" viewBox="0 0 1700 420" style="width:100%;height:420px;background:var(--panel);border-radius:12px"></svg><div class="card" id="da-x" style="font-size:24px;margin-top:8px"></div>';
+  D.deps.forEach((d,i)=>{const b=document.createElement('button');b.textContent='sentence '+(i+1);b.onclick=()=>{s=i;sel=-1;draw()};U.q('#da-b',root).appendChild(b)});
+  const EX={nsubj:'subject',dobj:'direct object',prep:'preposition attached here',pobj:'object of preposition',amod:'adjective modifier',det:'determiner',neg:'negation',acomp:'adjective complement',relcl:'relative clause',compound:'part of a name',ROOT:'main verb',npadvmod:'noun used as adverb',advmod:'adverb modifier',poss:'possessive',cc:'and/or',conj:'joined by and/or',punct:'punctuation',quantmod:'number modifier',nummod:'number',attr:'attribute'};
+  function sub(T,i){const out=[i];T.forEach(t=>{if(t[3]===i&&t[4]!==i)out.push(...sub(T,t[4]))});return out}
+  function draw(){
+    U.qa('#da-b button',root).forEach((b,i)=>b.classList.toggle('alt',i!==s));
+    const T=D.deps[s].toks, n=T.length, gap=1600/n, X=i=>60+i*gap+gap/2, base=370;
+    const hl=sel>=0?new Set(sub(T,sel)):new Set();
+    let h='';
+    T.forEach(t=>{const [w,pos,dep,head,i]=t;if(head===i)return;const a=X(head),b=X(i),d=Math.abs(head-i),ht=Math.min(290,50+d*48),mid=(a+b)/2;
+      const on=sel>=0&&(i===sel||head===sel);
+      h+='<path d="M'+a+','+(base-40)+' C'+a+','+(base-40-ht)+' '+b+','+(base-40-ht)+' '+b+','+(base-48)+'" fill="none" stroke="'+(on?'#e8590c':'#8aa0c8')+'" stroke-width="'+(on?5:3)+'"/><polygon points="'+(b-7)+','+(base-56)+' '+(b+7)+','+(base-56)+' '+b+','+(base-42)+'" fill="'+(on?'#e8590c':'#8aa0c8')+'"/><text x="'+mid+'" y="'+(base-40-ht*0.75-6)+'" font-size="22" font-weight="700" text-anchor="middle" fill="'+(on?'#e8590c':'#14213d')+'">'+dep+'</text>';});
+    T.forEach(t=>{const [w,pos,dep,head,i]=t;h+='<g style="cursor:pointer" data-i="'+i+'"><rect x="'+(X(i)-gap/2+4)+'" y="'+(base-34)+'" width="'+(gap-8)+'" height="70" rx="10" fill="'+(hl.has(i)?'#ffe3cc':'#fff')+'" stroke="'+(head===i?'#e8590c':'#14213d')+'" stroke-width="'+(head===i?4:2)+'"/><text x="'+X(i)+'" y="'+(base-2)+'" font-size="'+(w.length>9?20:24)+'" text-anchor="middle" font-weight="700">'+U.esc(w)+'</text><text x="'+X(i)+'" y="'+(base+26)+'" font-size="17" text-anchor="middle" fill="#6b7a99">'+pos+'</text></g>'});
+    const svg=U.q('#da-s',root); svg.innerHTML=h; svg.querySelectorAll('g').forEach(g=>g.onclick=()=>{sel=+g.dataset.i;draw()});
+    // explanation
+    let x;
+    if(sel>=0){const t=T[sel];x='<b>'+U.esc(t[0])+'</b> is the <b>'+t[2]+'</b> ('+(EX[t[2]]||'see the spaCy glossary')+')'+(t[3]!==t[4]?' of <b>'+U.esc(T[t[3]][0])+'</b>':'')+'. Its whole phrase (subtree): <i>'+sub(T,sel).sort((a,b)=>a-b).map(i=>U.esc(T[i][0])).join(' ')+'</i>';}
+    else{const v=T.find(t=>t[2]==='ROOT');const sj=T.filter(t=>t[2]==='nsubj'&&t[3]===v[4]).map(t=>sub(T,t[4]).sort((a,b)=>a-b).map(i=>T[i][0]).join(' '));const ob=T.filter(t=>(t[2]==='dobj'||t[2]==='acomp'||t[2]==='attr')&&t[3]===v[4]).map(t=>sub(T,t[4]).sort((a,b)=>a-b).map(i=>T[i][0]).join(' '));const ng=T.some(t=>t[2]==='neg'&&(t[3]===v[4]));
+      x='Main verb (ROOT): <b>'+U.esc(v[0])+'</b>. Subject: <b>'+(sj.join(', ')||'-')+'</b>. Object or complement: <b>'+(ob.join(', ')||'-')+'</b>'+(ng?' <span class="pill o">negated</span>':'')+'.<br><span class="small">Click any word to see its role and its whole phrase.</span>';}
+    U.q('#da-x',root).innerHTML=x;
+  }
+  draw();
+};
+
+// ================= Day 3 Session 1: word vectors, attention, positions =================
+window.addEventListener('DOMContentLoaded',function(){
+  const D=window.D3S1; if(!D) return;
+  const set=(id,h)=>{const e=document.getElementById(id); if(e) e.innerHTML=h;};
+  set('g12','great = ['+D.great12.join(', ')+', ...]');
+  set('w2vstat',D.sents.toLocaleString()+' reviews, '+(D.tokens/1e6).toFixed(1)+' million words, '+D.vocab.toLocaleString()+' words kept, about '+Math.round(D.secs/10)*10+' seconds on 2 CPU cores');
+  const an=k=>D.ana[k][3].slice(0,3).map(([w,s],i)=>(i?'':'<b>')+w+' ('+s.toFixed(2)+')'+(i?'':'</b>')).join(', ');
+  set('an1',an(0)); set('an2',an(1)); set('an3',an(2));
+});
+
+SIMS.vecExplorer=function(sl){
+  const D=window.D3S1, root=U.q('.sim',sl); let w='great';
+  const words=Object.keys(D.nn);
+  root.innerHTML='<div class="row" id="ve-b" style="gap:4px"></div><div class="cols c2" style="grid-template-columns:5fr 6fr;gap:24px"><div><div class="small" id="ve-h"></div><div id="ve-n"></div><table class="tbl sm" style="font-size:21px;margin-top:10px" id="ve-p"></table></div><svg id="ve-s" viewBox="0 0 760 520" style="width:100%;height:520px;background:var(--bg);border-radius:12px"></svg></div>';
+  words.forEach(x=>{const b=document.createElement('button');b.textContent=x;b.style.fontSize='21px';b.style.padding='4px 12px';b.onclick=()=>{w=x;draw()};U.q('#ve-b',root).appendChild(b)});
+  U.q('#ve-p',root).innerHTML='<tr><th>pair</th><th>cosine similarity</th></tr>'+D.sims.map(([a,b,s])=>'<tr><td class="l">'+a+' / '+b+'</td><td>'+s.toFixed(2)+'</td></tr>').join('');
+  const P=D.pts, xs=P.map(p=>p[1]), ys=P.map(p=>p[2]);
+  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const X=v=>40+(v-x0)/(x1-x0)*660, Y=v=>480-(v-y0)/(y1-y0)*440;
+  function draw(){
+    U.qa('#ve-b button',root).forEach(b=>b.classList.toggle('alt',b.textContent!==w));
+    U.q('#ve-h',root).innerHTML='Nearest words to <b>'+w+'</b> (cosine similarity, 1 = same direction)';
+    U.q('#ve-n',root).innerHTML=D.nn[w].map(([x,s])=>'<div style="display:flex;align-items:center;gap:10px;margin:3px 0;font-size:23px"><span style="width:150px;text-align:right;font-family:var(--mono)">'+U.esc(x)+'</span><span style="height:20px;width:'+(s*330)+'px;background:var(--teal);border-radius:4px"></span><span>'+s.toFixed(2)+'</span></div>').join('');
+    const near=new Set(D.nn[w].map(x=>x[0])); near.add(w);
+    const L=P.map(([t,x,y])=>({t,cx:X(x),cy:Y(y),lx:X(x)+12,ly:Y(y)+7,w:t.length*11+6}));
+    L.sort((a,b)=>a.ly-b.ly);
+    for(let it=0;it<40;it++){let moved=false;for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){const a=L[i],b=L[j];if(Math.abs(a.lx-b.lx)<Math.max(a.w,b.w)&&Math.abs(a.ly-b.ly)<22){const d=(22-Math.abs(a.ly-b.ly))/2+0.5;if(a.ly<=b.ly){a.ly-=d;b.ly+=d}else{a.ly+=d;b.ly-=d}moved=true}}if(!moved)break}
+    U.q('#ve-s',root).innerHTML='<text x="20" y="28" font-size="20" fill="#6b7a99">28 words projected from 100 dimensions to 2 (PCA)</text>'+L.map(o=>'<circle cx="'+o.cx+'" cy="'+o.cy+'" r="'+(o.t===w?11:7)+'" fill="'+(o.t===w?'#e8590c':near.has(o.t)?'#0f766e':'#8aa0c8')+'"/>'+(Math.abs(o.ly-o.cy-7)>8?'<line x1="'+o.cx+'" y1="'+o.cy+'" x2="'+(o.lx-2)+'" y2="'+(o.ly-6)+'" stroke="#c5cfe3" stroke-width="1.5"/>':'')+'<text x="'+o.lx+'" y="'+o.ly+'" font-size="21" font-weight="'+(near.has(o.t)?700:400)+'" fill="'+(o.t===w?'#e8590c':'#14213d')+'">'+o.t+'</text>').join('');
+  }
+  draw();
+};
+
+SIMS.attnCalc=function(sl){
+  const root=U.q('.sim',sl);
+  const T=['the','movie','was','not','good'];
+  const Q={the:[1,0,0,1],movie:[1,1,0,0],was:[0,0,0,1],not:[1,0,0,0],good:[1,2,0,1]};
+  const K={the:[0,0,1,0],movie:[1,0,0,1],was:[0,0,1,1],not:[0,1,0,1],good:[1,0,0,0]};
+  const V={the:[0,0,0.1,0],movie:[0,0,1,0],was:[0,0,0,1],not:[0,1,0,0],good:[1,0,0,0]};
+  const dims=['positive','negation','thing','verb'];
+  let q='good', scale=true, sharp=1;
+  root.innerHTML='<div class="row"><span>query word:</span><span id="ac-b"></span><label class="chk"><input type="checkbox" id="ac-s" checked>divide by &radic;d = 2</label><span>sharpness &times;</span><input type="range" id="ac-k" min="1" max="8" step="1" value="1" style="width:220px"><b id="ac-kv"></b></div><div class="cols c2" style="grid-template-columns:7fr 5fr;gap:22px"><div id="ac-t"></div><div><div class="small">Every word as a query (rows), weight on every key (columns)</div><div id="ac-m"></div></div></div>';
+  T.forEach(t=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>{q=t;draw()};U.q('#ac-b',root).appendChild(b)});
+  const dot=(a,b)=>a.reduce((s,x,i)=>s+x*b[i],0);
+  function weights(qw){const raw=T.map(k=>dot(Q[qw],K[k])), sc=raw.map(r=>(scale?r/2:r)*sharp), m=Math.max(...sc), e=sc.map(s=>Math.exp(s-m)), z=e.reduce((a,b)=>a+b,0);return {raw,sc,w:e.map(x=>x/z)}}
+  const vec=a=>'['+a.map(x=>(+x.toFixed(2))).join(', ')+']';
+  function draw(){
+    U.qa('#ac-b button',root).forEach(b=>b.classList.toggle('alt',b.textContent!==q));
+    U.q('#ac-kv',root).textContent=sharp;
+    const R=weights(q);
+    let h='<table class="tbl sm" style="font-size:21px;width:100%"><tr><th>key word</th><th>k</th><th>1. q&middot;k</th><th>2. '+(scale?'&divide; 2':'(no scaling)')+(sharp>1?' &times; '+sharp:'')+'</th><th>3. softmax weight</th><th>v</th></tr>';
+    T.forEach((k,i)=>{h+='<tr><td><b>'+k+'</b></td><td style="font-family:var(--mono)">'+vec(K[k])+'</td><td>'+R.raw[i]+'</td><td>'+(+R.sc[i].toFixed(2))+'</td><td class="l"><span style="display:inline-block;height:16px;width:'+(R.w[i]*170)+'px;background:var(--orange);vertical-align:middle"></span> '+R.w[i].toFixed(3)+'</td><td style="font-family:var(--mono)">'+vec(V[k])+'</td></tr>'});
+    const out=[0,0,0,0]; T.forEach((k,i)=>V[k].forEach((v,j)=>out[j]+=R.w[i]*v));
+    h+='</table><div class="card" style="margin-top:6px;font-size:23px">q for <b>'+q+'</b> = <span style="font-family:var(--mono)">'+vec(Q[q])+'</span><br>4. new vector for <b>'+q+'</b> = &Sigma; weight &times; v = <b style="font-family:var(--mono)">'+vec(out)+'</b><br><span class="small">value dimensions mean: '+dims.join(', ')+'</span></div>';
+    U.q('#ac-t',root).innerHTML=h;
+    let m='<table class="tbl sm" style="font-size:20px"><tr><th></th>'+T.map(k=>'<th>'+k+'</th>').join('')+'</tr>';
+    T.forEach(a=>{const w=weights(a).w;m+='<tr><th>'+a+'</th>'+w.map(x=>'<td style="background:rgba(232,89,12,'+x.toFixed(2)+');'+(x>0.5?'color:#fff':'')+'">'+x.toFixed(2)+'</td>').join('')+'</tr>'});
+    U.q('#ac-m',root).innerHTML=m+'</table><p class="small" style="margin-top:8px">Each row adds to 1. Raise the sharpness to see what happens when vectors are long and scores are not scaled: one word takes almost all the weight.</p>';
+  }
+  U.q('#ac-s',root).onchange=e=>{scale=e.target.checked;draw()};
+  U.q('#ac-k',root).oninput=e=>{sharp=+e.target.value;draw()};
+  draw();
+};
+
+SIMS.posEnc=function(sl){
+  const root=U.q('.sim',sl), N=50, Dm=64; let p=10;
+  const pe=(pos,i)=>{const k=Math.floor(i/2), w=1/Math.pow(10000,2*k/Dm);return i%2===0?Math.sin(pos*w):Math.cos(pos*w)};
+  root.innerHTML='<div class="row"><span>position</span><input type="range" id="pe-p" min="0" max="49" value="10"><b id="pe-pv"></b></div><div class="cols c2" style="grid-template-columns:1fr 1fr;gap:24px"><div><div class="small">Rows: positions 0 to 49. Columns: the 64 numbers of the position vector. Orange = +1, blue = &minus;1.</div><canvas id="pe-c" width="640" height="400" style="width:100%;border-radius:8px"></canvas></div><div><div class="small">Similarity (dot product) of position <b id="pe-pv2"></b> with every other position</div><svg id="pe-s" viewBox="0 0 640 400" style="width:100%;height:400px;background:var(--bg);border-radius:8px"></svg></div></div>';
+  const c=U.q('#pe-c',root), g=c.getContext('2d'), cw=640/Dm, ch=400/N;
+  function draw(){
+    U.q('#pe-pv',root).textContent=p; U.q('#pe-pv2',root).textContent=p;
+    for(let r=0;r<N;r++)for(let i=0;i<Dm;i++){const v=pe(r,i);g.fillStyle=v>=0?'rgba(232,89,12,'+v+')':'rgba(59,111,212,'+(-v)+')';g.fillRect(i*cw,r*ch,cw+0.5,ch+0.5)}
+    g.strokeStyle='#14213d';g.lineWidth=3;g.strokeRect(1,p*ch,638,ch);
+    const s=[];for(let r=0;r<N;r++){let d=0;for(let i=0;i<Dm;i++)d+=pe(p,i)*pe(r,i);s.push(d)}
+    const mx=Math.max(...s), mn=Math.min(...s), X=r=>30+r*(590/(N-1)), Y=v=>370-(v-mn)/(mx-mn)*330;
+    U.q('#pe-s',root).innerHTML='<polyline fill="none" stroke="#0f766e" stroke-width="4" points="'+s.map((v,r)=>X(r)+','+Y(v)).join(' ')+'"/><line x1="'+X(p)+'" x2="'+X(p)+'" y1="30" y2="380" stroke="#e8590c" stroke-dasharray="6"/><text x="30" y="395" font-size="18">0</text><text x="590" y="395" font-size="18">49</text><text x="'+(X(p)+8)+'" y="50" font-size="20" fill="#e8590c">position '+p+'</text>';
+  }
+  U.q('#pe-p',root).oninput=e=>{p=+e.target.value;draw()};
+  draw();
+};
+
+// A line-by-line JavaScript port of NLTK's PorterStemmer (default NLTK_EXTENSIONS mode),
+// with a trace of which step changed the word. Verified against nltk on ~20,000 words.
+window.porter = (function(){
+  var V="aeiou", POOL={"skies":"sky","sky":"sky","dying":"die","lying":"lie","tying":"tie","news":"news","innings":"inning","inning":"inning","outings":"outing","outing":"outing","cannings":"canning","canning":"canning","howe":"howe","proceed":"proceed","exceed":"exceed","succeed":"succeed"};
+  function flags(w){var f=[];for(var i=0;i<w.length;i++){var ch=w[i];if(V.indexOf(ch)>=0)f.push(false);else if(ch==="y")f.push(i===0?true:!f[i-1]);else f.push(true);}return f;}
+  function isCons(w,i){return flags(w)[i];}
+  function measure(s){var f=flags(s),seq=f.map(function(x){return x?"c":"v"}).join(""),n=0,i=-1;while((i=seq.indexOf("vc",i+1))>=0)n++;return n;}
+  function hasVowel(s){return !flags(s).every(Boolean);}
+  function endsDouble(w){return w.length>=2&&w[w.length-1]===w[w.length-2]&&isCons(w,w.length-1);}
+  function endsCvc(w){var n=w.length;return (n>=3&&isCons(w,n-3)&&!isCons(w,n-2)&&isCons(w,n-1)&&"wxy".indexOf(w[n-1])<0)||(n===2&&!isCons(w,0)&&isCons(w,1));}
+  function ends(w,s){return s===""||(w.length>=s.length&&w.slice(w.length-s.length)===s);}
+  function cut(w,s){return s===""?w:w.slice(0,w.length-s.length);}
+  // rules: [suffix, replacement, condition(stem)|null]
+  function apply(w,rules){
+    for(var i=0;i<rules.length;i++){var r=rules[i],suf=r[0],rep=r[1],cond=r[2];
+      if(suf==="*d"&&endsDouble(w)){var st=w.slice(0,-2);return (!cond||cond(st))?st+rep:w;}
+      if(suf!=="*d"&&ends(w,suf)){var st2=cut(w,suf);return (!cond||cond(st2))?st2+rep:w;}
+    }
+    return w;
+  }
+  var pos=function(s){return measure(s)>0;}, gt1=function(s){return measure(s)>1;};
+  function s1a(w){ if(ends(w,"ies")&&w.length===4) return cut(w,"ies")+"ie"; return apply(w,[["sses","ss"],["ies","i"],["ss","ss"],["s",""]]); }
+  function s1b(w){
+    if(ends(w,"ied")) return w.length===4?cut(w,"ied")+"ie":cut(w,"ied")+"i";
+    if(ends(w,"eed")){var st=cut(w,"eed");return measure(st)>0?st+"ee":w;}
+    var inter=null;
+    ["ed","ing"].some(function(s){if(ends(w,s)){var x=cut(w,s);if(hasVowel(x)){inter=x;return true;}}return false;});
+    if(inter===null) return w;
+    var last=inter[inter.length-1];
+    return apply(inter,[["at","ate"],["bl","ble"],["iz","ize"],["*d",last,function(){return "lsz".indexOf(last)<0;}],["","e",function(s){return measure(s)===1&&endsCvc(s);}]]);
+  }
+  function s1c(w){return apply(w,[["y","i",function(s){return s.length>1&&isCons(s,s.length-1);}]]);}
+  function s2(w){
+    if(ends(w,"alli")&&pos(cut(w,"alli"))) return s2(cut(w,"alli")+"al");
+    return apply(w,[["ational","ate",pos],["tional","tion",pos],["enci","ence",pos],["anci","ance",pos],["izer","ize",pos],["bli","ble",pos],["alli","al",pos],["entli","ent",pos],["eli","e",pos],["ousli","ous",pos],["ization","ize",pos],["ation","ate",pos],["ator","ate",pos],["alism","al",pos],["iveness","ive",pos],["fulness","ful",pos],["ousness","ous",pos],["aliti","al",pos],["iviti","ive",pos],["biliti","ble",pos],["fulli","ful",pos],["logi","log",function(){return pos(w.slice(0,-3));}]]);
+  }
+  function s3(w){return apply(w,[["icate","ic",pos],["ative","",pos],["alize","al",pos],["iciti","ic",pos],["ical","ic",pos],["ful","",pos],["ness","",pos]]);}
+  function s4(w){return apply(w,[["al","",gt1],["ance","",gt1],["ence","",gt1],["er","",gt1],["ic","",gt1],["able","",gt1],["ible","",gt1],["ant","",gt1],["ement","",gt1],["ment","",gt1],["ent","",gt1],["ion","",function(s){return measure(s)>1&&"st".indexOf(s[s.length-1])>=0;}],["ou","",gt1],["ism","",gt1],["ate","",gt1],["iti","",gt1],["ous","",gt1],["ive","",gt1],["ize","",gt1]]);}
+  function s5a(w){if(ends(w,"e")){var st=cut(w,"e");if(measure(st)>1)return st;if(measure(st)===1&&!endsCvc(st))return st;}return w;}
+  function s5b(w){return apply(w,[["ll","l",function(){return measure(w.slice(0,-1))>1;}]]);}
+  var STEPS=[["1a",s1a],["1b",s1b],["1c",s1c],["2",s2],["3",s3],["4",s4],["5a",s5a],["5b",s5b]];
+  function stem(word,trace){
+    var w=word.toLowerCase(); trace=trace||[];
+    if(POOL.hasOwnProperty(w)){ if(POOL[w]!==w) trace.push(["table",w,POOL[w]]); return POOL[w]; }
+    if(w.length<=2) return w;
+    STEPS.forEach(function(s){var n=s[1](w); if(n!==w) trace.push([s[0],w,n]); w=n;});
+    return w;
+  }
+  return stem;
+})();
+</script>
+<script>window.D3S1={"vocab": 41188, "sents": 50000, "tokens": 11485671, "nn": {"great": [["wonderful", 0.815], ["fantastic", 0.806], ["fine", 0.781], ["terrific", 0.767], ["good", 0.756], ["brilliant", 0.727], ["superb", 0.711], ["excellent", 0.703]], "terrible": [["horrible", 0.934], ["awful", 0.89], ["atrocious", 0.825], ["horrendous", 0.811], ["dreadful", 0.808], ["horrid", 0.804], ["bad", 0.788], ["lousy", 0.77]], "boring": [["dull", 0.897], ["pointless", 0.831], ["tedious", 0.829], ["predictable", 0.783], ["confusing", 0.754], ["uninteresting", 0.728], ["unoriginal", 0.728], ["lame", 0.714]], "funny": [["scary", 0.789], ["hilarious", 0.76], ["amusing", 0.733], ["entertaining", 0.693], ["clever", 0.682], ["corny", 0.669], ["humorous", 0.641], ["silly", 0.633]], "scary": [["funny", 0.789], ["gory", 0.698], ["shocking", 0.672], ["entertaining", 0.668], ["frightening", 0.664], ["exciting", 0.661], ["cheesy", 0.66], ["suspenseful", 0.653]], "actor": [["actress", 0.729], ["comedian", 0.699], ["performer", 0.685], ["performance", 0.636], ["role", 0.636], ["artist", 0.575], ["villain", 0.561], ["filmmaker", 0.529]], "actress": [["performer", 0.731], ["actor", 0.729], ["performance", 0.638], ["role", 0.632], ["singer", 0.631], ["dancer", 0.607], ["woman", 0.592], ["jessica", 0.572]], "director": [["filmmaker", 0.753], ["writer", 0.728], ["screenwriter", 0.716], ["producer", 0.666], ["screenplay", 0.629], ["cinematographer", 0.612], ["scriptwriter", 0.611], ["schumacher", 0.598]], "movie": [["film", 0.936], ["flick", 0.754], ["it", 0.682], ["show", 0.657], ["documentary", 0.623], ["picture", 0.619], ["movies", 0.618], ["sequel", 0.609]], "music": [["soundtrack", 0.845], ["score", 0.729], ["cinematography", 0.688], ["songs", 0.685], ["lyrics", 0.679], ["song", 0.668], ["animation", 0.654], ["musical", 0.651]], "plot": [["storyline", 0.875], ["story", 0.806], ["premise", 0.723], ["script", 0.688], ["narrative", 0.667], ["plots", 0.651], ["dialogue", 0.646], ["concept", 0.631]], "ending": [["climax", 0.736], ["finale", 0.723], ["twist", 0.676], ["storyline", 0.669], ["conclusion", 0.658], ["end", 0.623], ["resolution", 0.606], ["endings", 0.595]], "love": [["hate", 0.649], ["adore", 0.623], ["loved", 0.587], ["dislike", 0.555], ["despise", 0.515], ["enjoy", 0.514], ["asleep", 0.503], ["recommend", 0.499]], "hate": [["dislike", 0.781], ["adore", 0.735], ["hated", 0.707], ["despise", 0.649], ["love", 0.649], ["enjoy", 0.645], ["admire", 0.641], ["prefer", 0.638]], "excellent": [["outstanding", 0.889], ["exceptional", 0.836], ["superb", 0.824], ["terrific", 0.793], ["fantastic", 0.792], ["incredible", 0.755], ["amazing", 0.753], ["wonderful", 0.735]], "awful": [["terrible", 0.89], ["horrible", 0.86], ["atrocious", 0.83], ["dreadful", 0.811], ["abysmal", 0.789], ["horrid", 0.777], ["horrendous", 0.766], ["appalling", 0.761]], "horror": [["slasher", 0.863], ["exploitation", 0.704], ["genre", 0.686], ["noir", 0.625], ["giallo", 0.613], ["spoof", 0.612], ["indie", 0.611], ["splatter", 0.606]], "comedy": [["farce", 0.738], ["drama", 0.716], ["satire", 0.71], ["humour", 0.662], ["thriller", 0.654], ["humor", 0.646], ["slapstick", 0.644], ["comedies", 0.625]], "beautiful": [["gorgeous", 0.823], ["lovely", 0.821], ["stunning", 0.761], ["breathtaking", 0.72], ["vibrant", 0.708], ["wonderful", 0.695], ["lush", 0.679], ["magnificent", 0.661]], "stupid": [["dumb", 0.884], ["lame", 0.82], ["ridiculous", 0.816], ["pathetic", 0.798], ["silly", 0.793], ["unrealistic", 0.745], ["horrible", 0.744], ["idiotic", 0.736]]}, "sims": [["great", "excellent", 0.703], ["great", "terrible", 0.555], ["good", "bad", 0.773], ["movie", "film", 0.936], ["actor", "actress", 0.729], ["funny", "hilarious", 0.76], ["movie", "banana", -0.033], ["director", "spielberg", 0.545]], "ana": [["actor", "man", "woman", [["actress", 0.893], ["performer", 0.689], ["role", 0.599]]], ["king", "man", "woman", [["queen", 0.591], ["jane", 0.586], ["carmen", 0.562]]], ["good", "better", "bad", [["lame", 0.632], ["terrible", 0.61], ["awful", 0.601]]], ["spielberg", "director", "actor", [["comedian", 0.547], ["franco", 0.533], ["dangerfield", 0.532]]]], "pts": [["great", 6.417, -5.657], ["excellent", 2.571, -7.536], ["wonderful", 4.004, -6.682], ["brilliant", 3.141, -5.446], ["amazing", 4.54, -6.248], ["terrible", 6.867, -0.619], ["awful", 7.11, -1.615], ["horrible", 7.067, 0.146], ["boring", 4.984, 5.27], ["worst", 9.226, -1.248], ["actor", -10.675, -7.201], ["actress", -11.361, -7.081], ["director", -4.943, -1.576], ["cast", -8.176, -2.651], ["performance", -12.012, -5.943], ["horror", 1.655, 5.276], ["scary", 6.227, 3.936], ["creepy", 3.092, 1.041], ["comedy", -2.342, 2.697], ["funny", 5.697, 1.923], ["hilarious", 5.06, -2.173], ["music", -3.154, 2.215], ["song", -4.291, 0.81], ["soundtrack", -3.786, 2.567], ["plot", -2.487, 12.27], ["story", -4.456, 9.48], ["script", -5.692, 5.176], ["ending", -4.285, 8.869]], "great12": [-4.31, 0.55, -1.08, 0.06, -0.18, 0.3, 0.05, 0.27, 1.67, -0.01, -0.66, 0.37], "secs": 67};</script>
+<script>(function(){
+const D = window.DECK || {};
+const stage = document.getElementById('stage');
+const slides = Array.from(stage.querySelectorAll('.slide'));
+let cur = 0, inited = new Set();
+const topbar = document.getElementById('topbar');
+const tracker = document.getElementById('tracker');
+const secEl = topbar.querySelector('.sec');
+(D.stages||[]).forEach((s,i)=>{const d=document.createElement('div');d.className='st';d.textContent=(i+1)+' '+s;tracker.appendChild(d)});
+topbar.querySelector('.sess').textContent = D.session || '';
+const notesEl = document.getElementById('notes');
+const overview = document.getElementById('overview');
+const bar = document.querySelector('#bottombar .bar i');
+const counter = document.getElementById('counter');
+
+function scale(){
+  const s = Math.min(window.innerWidth/1920, window.innerHeight/1080);
+  stage.style.transform = 'scale('+s+')';
+}
+window.addEventListener('resize', scale); scale();
+
+function steps(sl){ return Array.from(sl.querySelectorAll('.step')); }
+function shown(sl){ return steps(sl).filter(e=>e.classList.contains('on')).length; }
+
+function show(i, atEnd){
+  i = Math.max(0, Math.min(slides.length-1, i));
+  slides[cur].classList.remove('active');
+  cur = i;
+  const sl = slides[cur];
+  sl.classList.add('active');
+  const st = steps(sl);
+  st.forEach((e,k)=>e.classList.toggle('on', atEnd ? true : false));
+  // tracker
+  const act = (sl.dataset.stage||'').split(',').filter(Boolean).map(Number);
+  const mn = act.length ? Math.min.apply(null,act) : 0;
+  Array.from(tracker.children).forEach((c,k)=>{
+    const n=k+1; c.className='st'+(act.includes(n)?' on':(act.length && n<mn?' done':''));
+  });
+  secEl.textContent = sl.dataset.sec || '';
+  bar.style.width = ((cur+1)/slides.length*100)+'%';
+  counter.textContent = (cur+1)+' / '+slides.length;
+  const n = sl.querySelector('aside.notes');
+  notesEl.innerHTML = '<h4>SPEAKER NOTES</h4>' + (n ? n.innerHTML : '<p>No notes for this slide.</p>');
+  const fn = sl.dataset.init;
+  if (fn && !inited.has(cur)) { inited.add(cur); if (window.SIMS && window.SIMS[fn]) { try{ window.SIMS[fn](sl); }catch(e){ console.error('sim '+fn, e); } } else console.error('missing sim', fn); }
+  if (location.hash !== '#'+(cur+1)) history.replaceState(null,'','#'+(cur+1));
+  document.title = (D.title||'Deck') + ' - ' + (cur+1);
+}
+function next(){
+  const sl = slides[cur]; const st = steps(sl);
+  const k = st.filter(e=>e.classList.contains('on')).length;
+  if (k < st.length) { st[k].classList.add('on'); return; }
+  if (cur < slides.length-1) show(cur+1);
+}
+function prev(){
+  const sl = slides[cur]; const st = steps(sl);
+  const k = st.filter(e=>e.classList.contains('on')).length;
+  if (k > 0) { st[k-1].classList.remove('on'); return; }
+  if (cur > 0) show(cur-1, true);
+}
+window.DECKNAV = {next, prev, show, get cur(){return cur}, slides};
+
+document.addEventListener('keydown', e=>{
+  const t = e.target, tag = (t.tagName||'').toLowerCase();
+  const typing = tag==='input'&&t.type!=='range'&&t.type!=='checkbox' || tag==='textarea' || tag==='select' || t.isContentEditable;
+  if (typing) { return; }
+  const k = e.key;
+  if (tag==='input' && t.type==='range' && (k==='ArrowLeft'||k==='ArrowRight')) return;
+  if ((tag==='button') && (k===' '||k==='Enter')) return;
+  if (k==='ArrowRight'||k==='PageDown'||k===' '||k==='Enter'){ e.preventDefault(); next(); }
+  else if (k==='ArrowLeft'||k==='PageUp'||k==='Backspace'){ e.preventDefault(); prev(); }
+  else if (k==='Home'){ show(0); }
+  else if (k==='End'){ show(slides.length-1, true); }
+  else if (k==='n'||k==='N'){ notesEl.classList.toggle('show'); }
+  else if (k==='o'||k==='O'||k==='Escape'){ if(k==='Escape'&&!overview.classList.contains('show')&&!notesEl.classList.contains('show')) return; toggleOverview(k==='Escape'?false:undefined); notesEl.classList.remove('show'); }
+  else if (k==='t'||k==='T'){ document.body.classList.toggle('dark'); }
+  else if (k==='f'||k==='F'){ if(!document.fullscreenElement) document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+});
+function toggleOverview(force){
+  const on = force===undefined ? !overview.classList.contains('show') : force;
+  overview.classList.toggle('show', on);
+  if(on) buildOverview();
+}
+function buildOverview(){
+  let html = '<h2 style="margin:0 0 10px;font-family:Georgia,serif">'+(D.title||'')+'</h2><div style="color:#9fb0d3;font-size:22px">Click a slide to jump. Keys: arrows/space = next and back, N = notes, O = overview, T = dark mode, F = fullscreen.</div>';
+  let last = null;
+  slides.forEach((s,i)=>{
+    const sec = s.dataset.sec || '';
+    if (sec !== last){ html += '<h4>'+sec.toUpperCase()+'</h4>'; last = sec; }
+    const h = s.querySelector('h1,h2'); const title = h ? h.textContent : 'slide';
+    html += '<a data-i="'+i+'" class="'+(i===cur?'cur':'')+'">'+(i+1)+'. '+title.slice(0,46)+'</a>';
+  });
+  overview.innerHTML = html;
+  overview.querySelectorAll('a').forEach(a=>a.onclick=()=>{ show(+a.dataset.i); overview.classList.remove('show'); });
+}
+document.getElementById('b-prev').onclick = prev;
+document.getElementById('b-next').onclick = next;
+document.getElementById('b-notes').onclick = ()=>notesEl.classList.toggle('show');
+document.getElementById('b-over').onclick = ()=>toggleOverview();
+stage.addEventListener('click', e=>{
+  if (e.target.closest('button,input,textarea,select,a,svg,.sim,label,#notes,#overview,#bottombar,#topbar')) return;
+  const r = stage.getBoundingClientRect(); const x = (e.clientX - r.left)/r.width;
+  if (x > 0.88) next(); else if (x < 0.08) prev();
+});
+const h0 = parseInt((location.hash||'').slice(1),10);
+show(isNaN(h0)?0:h0-1);
+})();
+</script>
+</body></html>
